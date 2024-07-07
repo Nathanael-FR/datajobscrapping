@@ -1,8 +1,8 @@
 import boto3
-import dotenv
 import os
+from dotenv import load_dotenv
 
-dotenv.load_dotenv()
+load_dotenv()
 
 session = boto3.Session(
     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
