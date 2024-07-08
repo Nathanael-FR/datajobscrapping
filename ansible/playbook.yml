@@ -10,6 +10,10 @@
         name: docker
         state: started
 
+    - name: Print docker_image variable
+      debug:
+        msg: "Docker image is {{ docker_image }}"
+        
     - name: Pull Docker image
       docker_image:
         name: "{{ docker_image }}"

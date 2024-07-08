@@ -29,8 +29,27 @@ jobs:
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/webscraper:${{ github.run_id }}
 
+  test-ssh:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install SSH Client
+      run: sudo apt-get update && sudo apt-get install -y openssh-client sshpass
+
+    - name: Test SSH connection
+      env:
+        VPS_IP: ${{ secrets.VPS_IP }}
+        VPS_PORT: ${{ secrets.VPS_PORT }}
+        VPS_USER: ${{ secrets.VPS_USER }}
+        VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+      run: |
+        sshpass -p "${{ env.VPS_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ env.VPS_USER }}@${{ env.VPS_IP }} -p ${{ env.VPS_PORT }} "echo 'SSH connection successful!'"
+
   deploy:
-    needs: build
+    needs: [build, test-ssh]
     runs-on: ubuntu-latest
 
     steps:
@@ -47,5 +66,5 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
       run: |
-        ansible-playbook deploy.yml -i "${{ secrets.VPS_IP }}:${{ secrets.VPS_PORT }}," \
+        ansible-playbook ansible/playbook.yml -i "${{ secrets.VPS_IP }}:${{ secrets.VPS_PORT }}," \
           --extra-vars "ansible_user=${{ secrets.VPS_USER }} ansible_ssh_pass=${{ secrets.VPS_PASSWORD }} docker_image=${{ secrets.DOCKERHUB_USERNAME }}/webscraper:${{ github.run_id }}"
