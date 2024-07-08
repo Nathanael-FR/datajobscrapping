@@ -96,7 +96,9 @@ class Scrapper(ABC):
         )
 
         client = session.client('s3')
-        client.upload_file(filename, 'jobscrappingbucket' , filename)
+        
+        folder = "data/" if ".csv" in filename else "logs/"
+        client.upload_file(filename, os.getenv('S3_BUCKET_NAME'), f'{folder}/{filename}')
 
     def run(self, filename: str):
 
