@@ -2,6 +2,8 @@
 - name: Deploy Docker container on VPS
   hosts: all
   become: true
+  vars:
+    docker_image: "{{ docker_image }}"
   tasks:
     - name: Ensure Docker is running
       service:
