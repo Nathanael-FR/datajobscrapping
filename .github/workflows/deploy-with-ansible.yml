@@ -59,6 +59,10 @@ jobs:
     - name: Install Ansible
       run: sudo apt-get update && sudo apt-get install -y ansible
 
+    - name: Install Ansible Collection
+      run: |
+        ansible-galaxy collection install community.docker --force
+        
     - name: Run Ansible playbook
       env:
         ANSIBLE_HOST_KEY_CHECKING: 'false'

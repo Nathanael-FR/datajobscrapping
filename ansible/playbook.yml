@@ -13,20 +13,20 @@
     - name: Print docker_image variable
       debug:
         msg: "Docker image is {{ docker_image }}"
-        
+     
     - name: Pull Docker image
-      docker_image:
+      community.docker.docker_image:
         name: "{{ docker_image }}"
         pull: yes
 
     - name: Stop and remove existing container
-      docker_container:
+      community.docker.docker_container:
         name: app_container
         state: absent
         force_kill: yes
 
     - name: Run new Docker container
-      docker_container:
+      community.docker.docker_container:
         name: app_container
         image: "{{ docker_image }}"
         state: started
