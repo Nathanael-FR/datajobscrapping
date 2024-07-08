@@ -67,4 +67,4 @@ jobs:
         S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
       run: |
         ansible-playbook ansible/playbook.yml -i "${{ secrets.VPS_IP }}:${{ secrets.VPS_PORT }}," \
-          --extra-vars "ansible_user=${{ secrets.VPS_USER }} ansible_ssh_pass=${{ secrets.VPS_PASSWORD }} docker_image=${{ secrets.DOCKERHUB_USERNAME }}/webscraper:${{ github.run_id }}"
+          --extra-vars "ansible_user=${{ secrets.VPS_USER }} ansible_ssh_pass=${{ secrets.VPS_PASSWORD }} docker_image=${{ secrets.DOCKERHUB_USERNAME }}/webscraper:${{ github.run_id }}" -vvv
