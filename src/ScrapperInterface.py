@@ -12,9 +12,16 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import datetime
+import boto3
+import os
+from dotenv import load_dotenv
+from logger import Logger
+
 
 @dataclass
 class Scrapper(ABC):
+
+    logger: Logger
 
     HEADERS: dict[str, str] = field(default_factory=lambda: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
@@ -39,7 +46,7 @@ class Scrapper(ABC):
             resp.raise_for_status()
 
         except httpx.HTTPStatusError as e:
-            print(f"Error response {resp.status_code} while requesting {e.request.url!r}")
+            self.self.logger.error(f"Error response {resp.status_code} while requesting {e.request.url!r}")
         except UnboundLocalError:
             return HTMLParser(webdriver.page_source)
         else :
@@ -56,17 +63,17 @@ class Scrapper(ABC):
         except:
             pass
 
-    @staticmethod
-    def extract_text(element: HTMLParser, sel: str, **kwargs) -> str:
+    def extract_text(self, element: HTMLParser, sel: str, **kwargs) -> str:
 
         attribute = kwargs.get("attri")
         try :
             if attribute :
-                return element.css_first(sel).attributes[attribute]
+                return element.css_first(sel).attributes[attribute].strip()
             else :
-                return element.css_first(sel).text(deep=True)
+                return element.css_first(sel).text(deep=True).strip()	
         except Exception as e :
-            print(f"{e}. Error extracting text from {sel}")
+            
+            self.logger.error(f"{e}. Error extracting text from {sel}")
             raise e
 
     @abstractmethod
@@ -81,14 +88,24 @@ class Scrapper(ABC):
     @abstractmethod
     def parse_job_offer(self) -> JobItem: pass
 
-    def run(self):
+    def load_to_s3(self, filename: str) -> None:
+
+        session = boto3.Session(
+            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+        )
+
+        client = session.client('s3')
+        client.upload_file(filename, 'jobscrappingbucket' , filename)
+
+    def run(self, filename: str):
 
         data = []
 
         html = self.get_html(self.BASE_URL, page=1)
         max_pages = self.get_max_pages(html)
         max_jobs = self.get_max_jobs(html)
-        print(f"Found {max_jobs} job offers on {max_pages} page(s)")
+        self.logger.info(f"Found {max_jobs} job offers on {max_pages} page(s)")
 
         for page in range(1, max_pages + 1):
             html = self.get_html(self.BASE_URL, page=page)
@@ -97,14 +114,16 @@ class Scrapper(ABC):
 
             job_urls = self.parse_page(html)
             for url in job_urls:
-                print(f"Processing job offer: {url}")
+                self.logger.info(f"Processing job offer: {url}")
                 job_item = self.parse_job_offer(url)
                 if job_item:
+                    self.logger.info(job_item.__dict__)
                     data.append(job_item.__dict__)
                 else:
-                    print(f"Error while parsing job offer: {url}")
+                    self.logger.error(f"Error while parsing job offer: {url}")
                 time.sleep(1)
 
         df = pd.DataFrame(data)
-        print(f"Scraped {len(df)} / {max_jobs} job offers. Saving to job_offers.csv...")
-        df.to_csv(f"/data/Scrapping_{datetime.date}.csv", index=False)
+        self.logger.info(f"Scraped {len(df)} / {max_jobs} job offers. Saving to csv...")
+        today = datetime.date.today()
+        df.to_csv(filename, index=False)

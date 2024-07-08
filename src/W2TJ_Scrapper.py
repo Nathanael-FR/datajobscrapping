@@ -1,3 +1,5 @@
+import datetime
+import os
 from selectolax.parser import HTMLParser
 import time
 import pandas as pd
@@ -8,6 +10,8 @@ from models import JobItem
 from ScrapperInterface import Scrapper
 from selenium import webdriver
 import undetected_chromedriver as uc
+from logger import Logger
+
 
 class W2TJScrapper(Scrapper):
 
@@ -129,7 +133,7 @@ class W2TJScrapper(Scrapper):
 
         
 
-    def run(self):
+    def run(self, filename: str):
         
         data = []
         try :
@@ -137,9 +141,8 @@ class W2TJScrapper(Scrapper):
 
             html = self.get_html(self.BASE_URL, page=1, webdriver=self.driver)
             max_jobs = self.get_max_jobs(html)
-            print(f"Max jobs: {max_jobs}")
             max_pages = self.get_max_pages(html)
-            print(f"Max pages: {max_pages}")
+            logger.info(f"Found {max_jobs} job offers on {max_pages} page(s)")
 
             for page in range(1, max_pages + 1):
                 html = self.get_html(self.BASE_URL, page=page, webdriver=self.driver)
@@ -148,20 +151,36 @@ class W2TJScrapper(Scrapper):
                 job_urls = self.parse_page(html)
                 for url in job_urls:
                     job_item = self.parse_job_offer(url)
-                    print("Scraping job offer: ", url)
+                    logger.info(f"Processing job offer: {url}")
                     if job_item:
+                        self.logger.info(job_item.__dict__)
                         data.append(job_item.__dict__)
                     else:
                         print(f"Error while parsing job offer: {url}")
                     time.sleep(1)
 
             df = pd.DataFrame(data)
-            print(f"Scraped {len(df)} / {max_jobs} job offers. Saving to job_offers.csv...")
-            df.to_csv("job_offers.csv", index=False)
+            logger.info(f"Scraped {len(df)} / {max_jobs} job offers. Saving to job_offers.csv...")            
+            df.to_csv(filename, index=False)
 
         finally:
             self.close_webdriver()
 
 if __name__ == "__main__":
+
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    logger = Logger(f"scrapping_{today}.log").get_logger()
+   
     scrapper = W2TJScrapper()
-    scrapper.run()
+    scrapper.run(filename=f"job_offers_W2TJ_{today}.csv")
+    
+    try :
+        scrapper.load_to_s3(f"job_offers_W2TJ_{today}.csv")
+        scrapper.load_to_s3(f"scrapping_{today}.log")
+    except Exception as e:
+        logger.error(f"Error loading to S3: {e}")
+    else :
+        os.remove(f"job_offers_W2TJ_{today}.csv")
+        os.remove(f"scrapping_{today}.log")
+    
+    logger.info("*" * 50, "End of scrapping", "*" * 50)
