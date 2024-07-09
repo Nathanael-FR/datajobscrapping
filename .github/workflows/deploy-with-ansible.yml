@@ -94,4 +94,4 @@ jobs:
 
     - name: Test container running
       run: |
-        sshpass -p "${{ secrets.VPS_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} -p ${{ secrets.VPS_PORT }} "docker ps"
+        sshpass -p "${{ secrets.VPS_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} -p ${{ secrets.VPS_PORT }} "docker ps | grep webscraper"

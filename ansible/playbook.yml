@@ -3,8 +3,6 @@
   hosts: localhost  
   gather_facts: false
   become: true
-  vars:
-    docker_image: "nathanaelfr/webscraper:9853173602"
 
   tasks:
 
