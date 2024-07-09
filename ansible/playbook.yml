@@ -5,9 +5,11 @@
   become: true
   vars:
     docker_image: "nathanaelfr/webscraper:9853173602"
+
   tasks:
 
-    - name: Pull Docker image
+    - name: Pull Docker image 
+      docker_image:
         name: "{{ docker_image }}"
         source: pull
       vars :
