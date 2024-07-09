@@ -56,12 +56,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Install Ansible
-      run: sudo apt-get update && sudo apt-get install -y ansible
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
 
-    - name: Install Ansible Collection
+    - name: Install Ansible
       run: |
-        ansible-galaxy collection install community.docker --force
+        python -m pip install --upgrade pip
+        pip install ansible
+
+    - name: Install required collections
+      run: |
+        ansible-galaxy collection install community.general
 
     - name: Run Ansible playbook
       env:
