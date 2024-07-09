@@ -14,3 +14,28 @@
       community.docker.docker_image_pull:
         name: "{{ docker_image }}"
         pull: yes
+
+    - name: Stop and remove existing container
+      community.docker.docker_container:
+        name: webscraper
+        image: "{{ docker_image }}"
+        state: absent
+        force: yes
+      ignore_errors: yes
+
+    - name: Run Docker container on VPS
+      community.docker.docker_container:
+        name: webscraper
+        image: "{{ docker_image }}"
+        state: started
+        restart_policy: always
+        env:
+          AWS_ACCESS_KEY_ID: "{{ aws_access_key_id }}"
+          AWS_SECRET_ACCESS_KEY: "{{ aws_secret_access_key }}"
+          S3_BUCKET_NAME: "{{ s3_bucket_name }}"
+      delegate_to: "{{ vps_ip }}"
+      become: true
+      vars:
+        ansible_ssh_user: "{{ vps_user }}"
+        ansible_ssh_pass: "{{ vps_password }}"
+        ansible_ssh_port: "{{ vps_port }}"

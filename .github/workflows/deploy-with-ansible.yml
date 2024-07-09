@@ -69,9 +69,18 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+        DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/webscraper:${{ github.run_id }}
       run: |
-        ansible-playbook ansible/playbook.yml -e "docker_image=${{ secrets.DOCKERHUB_USERNAME }}/webscraper:${{ github.run_id }}" -i ansible/hosts
+        ansible-playbook ansible/playbook.yml \
+          -e "docker_image=${{ env.DOCKER_IMAGE }}" \
+          -e "aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
+          -e "aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
+          -e "s3_bucket_name=${{ env.S3_BUCKET_NAME }}" \
+          -e "vps_user=${{ secrets.VPS_USER }}" \
+          -e "vps_password=${{ secrets.VPS_PASSWORD }}" \
+          -e "vps_ip=${{ secrets.VPS_IP }}" \
+          -e "vps_port=${{ secrets.VPS_PORT }}"
 
-    - name: test container running
+    - name: Test container running
       run: |
         sshpass -p "${{ secrets.VPS_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} -p ${{ secrets.VPS_PORT }} "docker ps"
