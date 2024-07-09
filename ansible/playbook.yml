@@ -14,7 +14,8 @@
     - name: Pull Docker image
       community.docker.docker_image_pull:
         name: "{{ docker_image }}"
-        pull: yes
+        source: pull
+        pull: always
 
     - name: Stop and remove existing container
       community.docker.docker_container:
