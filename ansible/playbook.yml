@@ -6,18 +6,15 @@
   vars:
     docker_image: "nathanaelfr/webscraper:9853173602"
   tasks:
-    - name: Ensure Docker is running
-      service:
-        name: docker
-        state: started
 
     - name: Pull Docker image
-      community.docker.docker_image_pull:
         name: "{{ docker_image }}"
-        pull: always
+        source: pull
+      vars :
+        ansible_python_interpreter: /usr/bin/python3
 
     - name: Stop and remove existing container
-      community.docker.docker_container:
+      docker_container:
         name: webscraper
         image: "{{ docker_image }}"
         state: absent
