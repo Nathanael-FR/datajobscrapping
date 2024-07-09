@@ -19,20 +19,3 @@
         name: "{{ docker_image }}"
         pull: yes
 
-    - name: Stop and remove existing container
-      community.docker.docker_container:
-        name: app_container
-        state: absent
-        force_kill: yes
-
-    - name: Run new Docker container
-      community.docker.docker_container:
-        name: app_container
-        image: "{{ docker_image }}"
-        state: started
-        restart_policy: always
-        env:
-          AWS_ACCESS_KEY_ID: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
-          AWS_SECRET_ACCESS_KEY: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
-          AWS_DEFAULT_REGION: "{{ lookup('env', 'AWS_DEFAULT_REGION') }}"
-          S3_BUCKET_NAME: "{{ lookup('env', 'S3_BUCKET_NAME')}}"
