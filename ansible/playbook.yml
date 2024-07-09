@@ -3,19 +3,14 @@
   hosts: all
   become: true
   vars:
-    docker_image: "{{ docker_image }}"
+    docker_image: "nathanaelfr/webscraper:9853173602"
   tasks:
     - name: Ensure Docker is running
       service:
         name: docker
         state: started
 
-    - name: Print docker_image variable
-      debug:
-        msg: "Docker image is {{ docker_image }}"
-     
     - name: Pull Docker image
-      community.docker.docker_image:
+      community.docker.docker_image_pull:
         name: "{{ docker_image }}"
         pull: yes
-
