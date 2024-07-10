@@ -1,0 +1,28 @@
+FROM python:3.7-slim
+
+WORKDIR /app
+
+COPY . /app/
+
+# Install cron
+RUN apt-get update && apt-get install -y cron
+
+# Ensure scripts are executable
+RUN chmod +x /app/script1.py
+RUN chmod +x /app/script2.py
+
+# Add cron jobs in a single crontab file
+RUN echo "* * * * * /usr/local/bin/python /app/script1.py >> /var/log/cron.log 2>&1" > /etc/cron.d/mycron
+RUN echo "* * * * * /usr/local/bin/python /app/script2.py >> /var/log/cron.log 2>&1" >> /etc/cron.d/mycron
+
+# Apply cron job permissions
+RUN chmod 0644 /etc/cron.d/mycron
+
+# Register the cron job
+RUN crontab /etc/cron.d/mycron
+
+# Create the log file
+RUN touch /var/log/cron.log
+
+# Start cron and log output
+CMD cron && tail -f /var/log/cron.log
