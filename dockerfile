@@ -8,19 +8,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 RUN apt-get update && apt-get install -y cron
 
-# Rendre les scripts exécutables
-RUN chmod +x /app/src/HW_Scrapper.py
-RUN chmod +x /app/src/W2TJ_Scrapper.py
+RUN touch /var/log/cron.log
 
-# Utiliser le chemin absolu du binaire Python et exécuter les scripts à 00h15
-RUN echo "15 0 * * * $(which python) /app/src/HW_Scrapper.py >> /var/log/HW_Scrapper.log 2>&1" >> /etc/cron.d/scrapper_cron
-RUN echo "15 0 * * * $(which python) /app/src/W2TJ_Scrapper.py >> /var/log/W2TJ_Scrapper.log 2>&1" >> /etc/cron.d/scrapper_cron
+RUN (crontab -l ; echo "0 16 * * * /usr/local/bin/python /app/src/HW_Scrapper.py >> /var/log/cron.log 2>&1") | crontab
+RUN (crontab -l ; echo "0 16 * * * /usr/local/bin/python /app/src/W2TJ_Scrapper.py >> /var/log/cron.log 2>&1") | crontab
 
-RUN chmod 0644 /etc/cron.d/scrapper_cron
+# Run the command on container startup
+CMD cron && tail -f /var/log/cron.log
 
-# Charger les tâches cron dans la crontab
-RUN crontab /etc/cron.d/scrapper_cron
-RUN touch /var/log/cron.log /var/log/HW_Scrapper.log /var/log/W2TJ_Scrapper.log
 
-# Démarrer le service cron et suivre les logs
-CMD cron && tail -f /var/log/cron.log /var/log/HW_Scrapper.log /var/log/W2TJ_Scrapper.log

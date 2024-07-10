@@ -28,28 +28,28 @@ class Scrapper(ABC):
     })
 
     def get_html(self, baseurl, webdriver: ChromeDriver = None, **kwargs) -> HTMLParser:
-    
+
         url = baseurl
 
-        if kwargs.get("page") :
+        if kwargs.get("page"):
             page = kwargs.get("page")
             url = baseurl.format(page)
 
-        if not webdriver:        
+        if not webdriver:
             resp = httpx.get(url, headers=self.HEADERS)
-        else :
+        else:
             webdriver.get(url)
             self.accept_cookies(webdriver)
 
-
-        try :
+        try:
             resp.raise_for_status()
 
         except httpx.HTTPStatusError as e:
-            self.self.logger.error(f"Error response {resp.status_code} while requesting {e.request.url!r}")
+            self.self.logger.error(
+                f"Error response {resp.status_code} while requesting {e.request.url!r}")
         except UnboundLocalError:
             return HTMLParser(webdriver.page_source)
-        else :
+        else:
             return HTMLParser(resp.text)
 
     def accept_cookies(self, driver: ChromeDriver):
@@ -57,7 +57,8 @@ class Scrapper(ABC):
 
         try:
             cookies = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, '//*[@id="onetrust-accept-btn-handler"]'))
+                EC.element_to_be_clickable(
+                    (By.XPATH, '//*[@id="onetrust-accept-btn-handler"]'))
             )
             cookies.click()
         except:
@@ -66,13 +67,13 @@ class Scrapper(ABC):
     def extract_text(self, element: HTMLParser, sel: str, **kwargs) -> str:
 
         attribute = kwargs.get("attri")
-        try :
-            if attribute :
+        try:
+            if attribute:
                 return element.css_first(sel).attributes[attribute].strip()
-            else :
-                return element.css_first(sel).text(deep=True).strip()	
-        except Exception as e :
-            
+            else:
+                return element.css_first(sel).text(deep=True).strip()
+        except Exception as e:
+
             self.logger.error(f"{e}. Error extracting text from {sel}")
             raise e
 
@@ -96,9 +97,10 @@ class Scrapper(ABC):
         )
 
         client = session.client('s3')
-        
+
         folder = "data/" if ".csv" in filename else "logs/"
-        client.upload_file(filename, os.getenv('S3_BUCKET_NAME'), f'{folder}/{filename}')
+        client.upload_file(filename, os.getenv(
+            'S3_BUCKET_NAME'), f'{folder}/{filename}')
 
     def run(self, filename: str):
 
@@ -126,6 +128,7 @@ class Scrapper(ABC):
                 time.sleep(1)
 
         df = pd.DataFrame(data)
-        self.logger.info(f"Scraped {len(df)} / {max_jobs} job offers. Saving to csv...")
+        self.logger.info(
+            f"Scraped {len(df)} / {max_jobs} job offers. Saving to csv...")
         today = datetime.date.today()
         df.to_csv(filename, index=False)

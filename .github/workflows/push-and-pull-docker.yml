@@ -37,3 +37,6 @@ jobs:
           -e AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }} \
           -e S3_BUCKET_NAME=jobscrappingbucket \
           ${{ secrets.DOCKERHUB_USERNAME }}/webscraper:${{ github.run_id }}
+
+    - name: Check running container 
+      run: docker ps -q | xargs docker inspect --format '{{ .State.Status }}'
