@@ -35,7 +35,12 @@ class W2TJScrapper(Scrapper):
         options.add_argument("--disable-features=IsolateOrigins")
         options.add_argument("--disable-features=site-per-process")
 
-        self.driver = uc.Chrome(options=options)
+        self.driver = uc.Chrome(options=options,
+                                browser_executable_path=os.getenv(
+                                    "CHROME_PATH"),
+                                driver_executable_path=os.getenv(
+                                    "CHROMEDRIVER_PATH")
+                                )
 
     def close_webdriver(self):
 
@@ -93,46 +98,52 @@ class W2TJScrapper(Scrapper):
         if not html:
             return None
 
-        job_title = self.extract_text(
-            html, 'h2[class="sc-gvZAcH lodDwl  wui-text"]')
-        company_name = self.extract_text(
-            html, 'span[class="sc-gvZAcH lpuzVS  wui-text"]')
+        try:
+            job_title = self.extract_text(
+                html, 'h2[class="sc-gvZAcH lodDwl  wui-text"]')
+            company_name = self.extract_text(
+                html, 'span[class="sc-gvZAcH lpuzVS  wui-text"]')
 
-        salary, remote = None, None
-        job_details = html.css("div[class='sc-bOhtcR eDrxLt']")
-        for detail in job_details:
-            if detail.css_first("i[name='location']"):
-                job_location = detail.text(deep=True)
-            if detail.css_first("i[name='contract']"):
-                contract_type = detail.text(deep=True)
-            if detail.css_first("i[name='salary']"):
-                salary = detail.text(deep=True)
-            if detail.css_first("i[name='remote']"):
-                remote = detail.text(deep=True)
+            salary, remote = None, None
+            job_details = html.css("div[class='sc-bOhtcR eDrxLt']")
+            for detail in job_details:
+                if detail.css_first("i[name='location']"):
+                    job_location = detail.text(deep=True)
+                if detail.css_first("i[name='contract']"):
+                    contract_type = detail.text(deep=True)
+                if detail.css_first("i[name='salary']"):
+                    salary = detail.text(deep=True)
+                if detail.css_first("i[name='remote']"):
+                    remote = detail.text(deep=True)
 
-        if html.css('span[class="sc-bOhtcR eDrxLt"]'):
-            locations = html.css("span[class='q7vo0q-1 jubwAZ']")
-            job_location = ", ".join([location.text(deep=True)
-                                     for location in locations])
+            if html.css('span[class="sc-bOhtcR eDrxLt"]'):
+                locations = html.css("span[class='q7vo0q-1 jubwAZ']")
+                job_location = ", ".join([location.text(deep=True)
+                                          for location in locations])
 
-        publication_date = self.extract_text(html, 'time', attri='datetime')
-        company_logo_url = self.extract_logo_url(html, company_name)
+            publication_date = self.extract_text(
+                html, 'time', attri='datetime')
+            company_logo_url = self.extract_logo_url(html, company_name)
 
-        company_sector = self.extract_text(
-            html, 'div[data-testid="job-company-tag"] span')
+            company_sector = self.extract_text(
+                html, 'div[data-testid="job-company-tag"] span')
 
-        return JobItem(
-            job_title=job_title,
-            job_url=job_offer_url,
-            company_name=company_name,
-            location=job_location,
-            contract_type=contract_type,
-            salary=salary,
-            remote=remote,
-            publication_date=publication_date,
-            company_logo_url=company_logo_url,
-            company_sector=company_sector
-        )
+        except Exception as e:
+            return None
+
+        else:
+            return JobItem(
+                job_title=job_title,
+                job_url=job_offer_url,
+                company_name=company_name,
+                location=job_location,
+                contract_type=contract_type,
+                salary=salary,
+                remote=remote,
+                publication_date=publication_date,
+                company_logo_url=company_logo_url,
+                company_sector=company_sector
+            )
 
     def run(self, filename: str):
 
@@ -152,8 +163,8 @@ class W2TJScrapper(Scrapper):
                     break
                 job_urls = self.parse_page(html)
                 for url in job_urls:
-                    job_item = self.parse_job_offer(url)
                     logger.info(f"Processing job offer: {url}")
+                    job_item = self.parse_job_offer(url)
                     if job_item:
                         self.logger.info(job_item.__dict__)
                         data.append(job_item.__dict__)
@@ -175,7 +186,7 @@ if __name__ == "__main__":
     today = datetime.date.today().strftime("%Y-%m-%d")
     logger = Logger(f"scrapping_{today}.log").get_logger()
 
-    scrapper = W2TJScrapper()
+    scrapper = W2TJScrapper(logger)
     scrapper.run(filename=f"job_offers_W2TJ_{today}.csv")
 
     try:

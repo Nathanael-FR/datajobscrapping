@@ -16,9 +16,7 @@
     - name: Stop and remove existing container
       docker_container:
         name: webscraper
-        image: "{{ docker_image }}"
         state: absent
-        force: yes
       ignore_errors: yes
 
     - name: Run Docker container on VPS
@@ -37,3 +35,8 @@
         ansible_ssh_user: "{{ vps_user }}"
         ansible_ssh_pass: "{{ vps_password }}"
         ansible_ssh_port: "{{ vps_port }}"
+
+    - name: Check if container is running
+      shell: docker ps | grep webscraper
+      register: container_status
+      ignore_errors: yes

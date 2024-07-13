@@ -1,19 +1,40 @@
 FROM python:3.11-slim
 
+# Define the timezone for the cron schedule
+ENV TZ=Europe/Paris
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Dependencies for Chromium 
+RUN apt-get update && apt-get -y install \
+    cron \
+    wget \
+    gnupg \
+    ca-certificates \
+    --no-install-recommends
+
+# Chromium installation
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && \
+    apt-get update && \
+    apt-get -y install google-chrome-stable --no-install-recommends && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-COPY . /app
+COPY /src /app
+COPY requirements.txt /app/requirements.txt
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
-RUN apt-get update && apt-get install -y cron
+RUN chmod a+x /app/HW_Scrapper.py
+RUN chmod a+x /app/W2TJ_Scrapper.py
 
-RUN touch /var/log/cron.log
+RUN echo '30 0 * * * /usr/local/bin/python /app/HW_Scrapper.py >> /var/log/hw_scrapping.log 2>&1' > /etc/cron.d/my-crontab
+RUN echo '30 0 * * * /usr/local/bin/python /app/W2TJ_Scrapper.py >> /var/log/w2tj_scrapping.log 2>&1' >> /etc/cron.d/my-crontab
 
-RUN (crontab -l ; echo "0 16 * * * /usr/local/bin/python /app/src/HW_Scrapper.py >> /var/log/cron.log 2>&1") | crontab
-RUN (crontab -l ; echo "0 16 * * * /usr/local/bin/python /app/src/W2TJ_Scrapper.py >> /var/log/cron.log 2>&1") | crontab
+RUN chmod 0644 /etc/cron.d/my-crontab && crontab /etc/cron.d/my-crontab
 
-# Run the command on container startup
-CMD cron && tail -f /var/log/cron.log
+RUN touch /var/log/hw_scrapping.log /var/log/w2tj_scrapping.log
 
-
+# Start the cron service in the background 
+CMD ["sh", "-c", "cron && tail -f /var/log/hw_scrapping.log /var/log/w2tj_scrapping.log"]

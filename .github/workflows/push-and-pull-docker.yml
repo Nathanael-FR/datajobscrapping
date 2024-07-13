@@ -40,3 +40,11 @@ jobs:
 
     - name: Check running container 
       run: docker ps -q | xargs docker inspect --format '{{ .State.Status }}'
+
+    - name: Check cron jobs in running container
+      run: |
+        docker exec $(docker ps -q) bash -c "crontab -l > /tmp/crontab_output && diff /app/crontab /tmp/crontab_output > /dev/null"
+        if [ $? -ne 0 ]; then
+          echo "cron jobs differ"
+          exit 1
+        fi

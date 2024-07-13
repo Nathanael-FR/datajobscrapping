@@ -71,50 +71,57 @@ class HelloWorkScrapper(Scrapper):
         if not html:
             return None
 
-        job_title = self.extract_text(html, "span[data-cy='jobTitle']")
+        try:
+            job_title = self.extract_text(html, "span[data-cy='jobTitle']")
 
-        location_and_contract = html.css("li.tw-tag-contract-s.tw-readonly")
-        if location_and_contract:
-            job_location = location_and_contract[0].text(
-                deep=True).strip() if len(location_and_contract) > 0 else None
-            contract_type = location_and_contract[1].text(
-                deep=True).strip() if len(location_and_contract) > 1 else None
+            location_and_contract = html.css(
+                "li.tw-tag-contract-s.tw-readonly")
+            if location_and_contract:
+                job_location = location_and_contract[0].text(
+                    deep=True).strip() if len(location_and_contract) > 0 else None
+                contract_type = location_and_contract[1].text(
+                    deep=True).strip() if len(location_and_contract) > 1 else None
+            else:
+                job_location, contract_type = None, None
+
+            company_name = self.extract_text(
+                html, "span.tw-contents.tw-typo-m.tw-text-grey")
+            salary = self.extract_text(html, "li.tw-tag-attractive-s.tw-readonly") if html.css_first(
+                "li.tw-tag-attractive-s.tw-readonly") else None
+            remote = self.extract_text(html, "li.tw-tag-primary-s.tw-readonly") if html.css_first(
+                "li.tw-tag-primary-s.tw-readonly") else None
+
+            if remote and "Télétravail" not in remote:
+                remote = None
+
+            job_tags = html.css(
+                "li.tw-block.tw-tag-primary-s.tw-readonly.tw-w-fit.tw-whitespace-nowrap.tw-text-ellipsis.tw-overflow-hidden")
+            company_sector = " • ".join(tag.text(deep=True).strip(
+            ) for tag in job_tags if tag.text(deep=True).strip() in self.COMPANY_FIELDS)
+
+            company_logo_url = self.extract_logo_url(html, company_name)
+
+            date_pattern = re.compile(r"\d{2}/\d{2}/\d{4}")
+            publication_date = date_pattern.search(self.extract_text(
+                html, "span.tw-block.tw-typo-xs.tw-text-grey.tw-mt-3.tw-break-words"))
+            publication_date = publication_date.group() if publication_date else None
+
+        except Exception as e:
+            return None
+
         else:
-            job_location, contract_type = None, None
-
-        company_name = self.extract_text(
-            html, "span.tw-contents.tw-typo-m.tw-text-grey")
-        salary = self.extract_text(html, "li.tw-tag-attractive-s.tw-readonly") if html.css_first(
-            "li.tw-tag-attractive-s.tw-readonly") else None
-        remote = self.extract_text(html, "li.tw-tag-primary-s.tw-readonly") if html.css_first(
-            "li.tw-tag-primary-s.tw-readonly") else None
-
-        if remote and "Télétravail" not in remote:
-            remote = None
-
-        job_tags = html.css(
-            "li.tw-block.tw-tag-primary-s.tw-readonly.tw-w-fit.tw-whitespace-nowrap.tw-text-ellipsis.tw-overflow-hidden")
-        company_sector = " • ".join(tag.text(deep=True).strip(
-        ) for tag in job_tags if tag.text(deep=True).strip() in self.COMPANY_FIELDS)
-
-        company_logo_url = self.extract_logo_url(html, company_name)
-
-        date_pattern = re.compile(r"\d{2}/\d{2}/\d{4}")
-        publication_date = date_pattern.search(self.extract_text(
-            html, "span.tw-block.tw-typo-xs.tw-text-grey.tw-mt-3.tw-break-words"))
-        publication_date = publication_date.group() if publication_date else None
-        return JobItem(
-            job_title=job_title,
-            job_url=job_offer_url,
-            salary=salary,
-            company_name=company_name,
-            company_sector=company_sector,
-            company_logo_url=company_logo_url,
-            location=job_location,
-            contract_type=contract_type,
-            remote=remote,
-            publication_date=publication_date
-        )
+            return JobItem(
+                job_title=job_title,
+                job_url=job_offer_url,
+                salary=salary,
+                company_name=company_name,
+                company_sector=company_sector,
+                company_logo_url=company_logo_url,
+                location=job_location,
+                contract_type=contract_type,
+                remote=remote,
+                publication_date=publication_date
+            )
 
 
 if __name__ == "__main__":
