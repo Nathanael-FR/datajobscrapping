@@ -1,0 +1,8 @@
+[vps]
+{{ vps_ip }}
+
+[vps:vars]
+ansible_ssh_user={{ vps_user }}
+ansible_ssh_pass={{ vps_password }}
+ansible_ssh_port={{ vps_port }}
+ansible_python_interpreter=/usr/bin/python3

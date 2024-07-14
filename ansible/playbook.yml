@@ -1,20 +1,18 @@
 ---
 - name: Deploy Docker container on VPS
-  hosts: localhost  
+  hosts: vps
   gather_facts: false
   become: true
 
   tasks:
 
     - name: Pull Docker image 
-      docker_image:
+      community.docker.docker_image:
         name: "{{ docker_image }}"
         source: pull
-      vars :
-        ansible_python_interpreter: /usr/bin/python3
 
     - name: Stop and remove existing container
-      docker_container:
+      community.docker.docker_container:
         name: webscraper
         state: absent
       ignore_errors: yes
@@ -25,27 +23,26 @@
         image: "{{ docker_image }}"
         state: started
         restart_policy: always
+        image_name_mismatch: recreate
         env:
           AWS_ACCESS_KEY_ID: "{{ aws_access_key_id }}"
           AWS_SECRET_ACCESS_KEY: "{{ aws_secret_access_key }}"
           S3_BUCKET_NAME: "{{ s3_bucket_name }}"
-      delegate_to: "{{ vps_ip }}"
-      become: true
-      vars:
-        ansible_ssh_user: "{{ vps_user }}"
-        ansible_ssh_pass: "{{ vps_password }}"
-        ansible_ssh_port: "{{ vps_port }}"
 
-    - name: Check if container is running
-      shell: docker ps | grep webscraper
-      register: container_status
-      ignore_errors: yes
-    
+    - name: Grab container status
+      community.docker.docker_container_info:
+        name: webscraper
+      register: container_info
+
+    - name: Ensure the container is running
+      assert:
+        that:
+          - container_info.container.State.Running
+        msg: "The webscraper container is not running!"
+
     - name: Check environment variables inside the container
       shell: |
         docker exec webscraper python3 -c "import os; assert os.environ['AWS_ACCESS_KEY_ID'] == '{{ aws_access_key_id }}'"
         docker exec webscraper python3 -c "import os; assert os.environ['AWS_SECRET_ACCESS_KEY'] == '{{ aws_secret_access_key }}'"
         docker exec webscraper python3 -c "import os; assert os.environ['S3_BUCKET_NAME'] == '{{ s3_bucket_name }}'"
-      delegate_to: "{{ vps_ip }}"
-      become: true
       ignore_errors: yes

@@ -70,24 +70,30 @@ jobs:
       run: |
         ansible-galaxy collection install community.general
 
+    - name: Create dynamic inventory
+      run: |
+        cat <<EOF > ansible/inventories/setup.yml
+        [vps]
+        ${{ secrets.VPS_IP }}
+
+        [vps:vars]
+        ansible_ssh_user=${{ secrets.VPS_USER }}
+        ansible_ssh_pass=${{ secrets.VPS_PASSWORD }}
+        ansible_ssh_port=${{ secrets.VPS_PORT }}
+        ansible_python_interpreter=/usr/bin/python3
+        EOF
+
     - name: Run Ansible playbook
       env:
         ANSIBLE_HOST_KEY_CHECKING: 'false'
         DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/webscraper:${{ github.run_id }}
-        VPS_USER: ${{ secrets.VPS_USER }}
-        VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
-        VPS_IP: ${{ secrets.VPS_IP }}
-        VPS_PORT: ${{ secrets.VPS_PORT }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
       run: |
         ansible-playbook ansible/playbook.yml \
+          -i ansible/inventories/setup.yml \
           -e "docker_image=${{ env.DOCKER_IMAGE }}" \
-          -e "vps_user=${{ env.VPS_USER }}" \
-          -e "vps_password=${{ env.VPS_PASSWORD }}" \
-          -e "vps_ip=${{ env.VPS_IP }}" \
-          -e "vps_port=${{ env.VPS_PORT }}" \
           -e "aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
           -e "aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
           -e "s3_bucket_name=${{ env.S3_BUCKET_NAME }}"
