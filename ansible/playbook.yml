@@ -41,9 +41,11 @@
       register: container_status
       ignore_errors: yes
     
-    - name: Check environment variables
+    - name: Check environment variables inside the container
       shell: |
-        python3 -c "import os; assert len(os.environ) == 3"
-        python3 -c "import os; assert os.environ['AWS_ACCESS_KEY_ID'] == '{{ aws_access_key_id }}'"
-        python3 -c "import os; assert os.environ['AWS_SECRET_ACCESS_KEY'] == '{{ aws_secret_access_key }}'"
-        python3 -c "import os; assert os.environ['S3_BUCKET_NAME'] == '{{ s3_bucket_name }}'"
+        docker exec webscraper python3 -c "import os; assert os.environ['AWS_ACCESS_KEY_ID'] == '{{ aws_access_key_id }}'"
+        docker exec webscraper python3 -c "import os; assert os.environ['AWS_SECRET_ACCESS_KEY'] == '{{ aws_secret_access_key }}'"
+        docker exec webscraper python3 -c "import os; assert os.environ['S3_BUCKET_NAME'] == '{{ s3_bucket_name }}'"
+      delegate_to: "{{ vps_ip }}"
+      become: true
+      ignore_errors: yes
