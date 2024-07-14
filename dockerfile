@@ -29,8 +29,8 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 RUN chmod a+x /app/HW_Scrapper.py
 RUN chmod a+x /app/W2TJ_Scrapper.py
 
-RUN echo '30 0 * * * /usr/local/bin/python /app/HW_Scrapper.py >> /var/log/hw_scrapping.log 2>&1' > /etc/cron.d/my-crontab
-RUN echo '30 0 * * * /usr/local/bin/python /app/W2TJ_Scrapper.py >> /var/log/w2tj_scrapping.log 2>&1' >> /etc/cron.d/my-crontab
+RUN echo '30 1 * * * /usr/local/bin/python /app/HW_Scrapper.py >> /var/log/hw_scrapping.log 2>&1' > /etc/cron.d/my-crontab
+RUN echo '30 1 * * * /usr/local/bin/python /app/W2TJ_Scrapper.py >> /var/log/w2tj_scrapping.log 2>&1' >> /etc/cron.d/my-crontab
 
 RUN chmod 0644 /etc/cron.d/my-crontab && crontab /etc/cron.d/my-crontab
 

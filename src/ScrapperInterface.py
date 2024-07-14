@@ -92,15 +92,15 @@ class Scrapper(ABC):
     def load_to_s3(self, filename: str) -> None:
 
         session = boto3.Session(
-            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+            aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+            aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
         )
 
         client = session.client('s3')
 
         folder = "data/" if ".csv" in filename else "logs/"
-        client.upload_file(filename, os.getenv(
-            'S3_BUCKET_NAME'), f'{folder}/{filename}')
+        client.upload_file(
+            filename, os.environ['S3_BUCKET_NAME'], f'{folder}/{filename}')
 
     def run(self, filename: str):
 
