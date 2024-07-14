@@ -198,4 +198,4 @@ if __name__ == "__main__":
         os.remove(f"job_offers_W2TJ_{today}.csv")
         os.remove(f"scrapping_{today}.log")
 
-    logger.info("*" * 50, "End of scrapping", "*" * 50)
+    logger.info("*" * 50 + "End of scrapping" + "*" * 50)
