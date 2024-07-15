@@ -15,6 +15,9 @@ RUN chmod +x /app/script2.py
 RUN echo "* * * * * /usr/local/bin/python /app/script1.py >> /var/log/cron.log 2>&1" > /etc/cron.d/mycron
 RUN echo "* * * * * /usr/local/bin/python /app/script2.py >> /var/log/cron.log 2>&1" >> /etc/cron.d/mycron
 
+COPY start-cron.sh /start-cron.sh
+RUN chmod +x /start-cron.sh
+
 # Apply cron job permissions
 RUN chmod 0644 /etc/cron.d/mycron
 
@@ -25,4 +28,4 @@ RUN crontab /etc/cron.d/mycron
 RUN touch /var/log/cron.log
 
 # Start cron and log output
-CMD cron && tail -f /var/log/cron.log
+CMD ["/start-cron.sh"]
