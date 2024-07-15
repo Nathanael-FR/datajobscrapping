@@ -27,6 +27,7 @@ COPY entrypoint.sh /app/entrypoint.sh
 
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
+RUN chmod a+x /app/entrypoint.sh
 RUN chmod a+x /app/HW_Scrapper.py
 RUN chmod a+x /app/W2TJ_Scrapper.py
 
