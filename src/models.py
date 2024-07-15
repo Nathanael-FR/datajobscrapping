@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class JobItem:
     job_title: str | None
     job_url: str | None
+    job_description: str | None
     salary: str | None
     company_name: str | None
     company_sector: str | list[str] | None

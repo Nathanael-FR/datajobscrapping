@@ -128,13 +128,23 @@ class W2TJScrapper(Scrapper):
             company_sector = self.extract_text(
                 html, 'div[data-testid="job-company-tag"] span')
 
+            jobs_desc_section = self.extract_text(
+                html, 'div[data-testid="job-section-description"]')
+
+            job_exp_section = self.extract_text(
+                html, 'div[data-testid="job-section-experience"]')
+
+            job_description = f"{jobs_desc_section}\n{job_exp_section}"
+
         except Exception as e:
+            print(e)
             return None
 
         else:
             return JobItem(
                 job_title=job_title,
                 job_url=job_offer_url,
+                job_description=job_description,
                 company_name=company_name,
                 location=job_location,
                 contract_type=contract_type,
@@ -166,6 +176,7 @@ class W2TJScrapper(Scrapper):
                     logger.info(f"Processing job offer: {url}")
                     job_item = self.parse_job_offer(url)
                     if job_item:
+                        # self.logger.info(job_item.job_description[:100])
                         self.logger.info(job_item.__dict__)
                         data.append(job_item.__dict__)
                     else:

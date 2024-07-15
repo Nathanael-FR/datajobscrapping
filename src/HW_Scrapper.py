@@ -106,13 +106,21 @@ class HelloWorkScrapper(Scrapper):
                 html, "span.tw-block.tw-typo-xs.tw-text-grey.tw-mt-3.tw-break-words"))
             publication_date = publication_date.group() if publication_date else None
 
+            job_desc_sections = html.css(
+                "p[class='tw-typo-long-m tw-mb-12 sm:tw-mb-14 tw-break-words']")
+
+            job_description = " ".join(
+                section.text(deep=True).strip() for section in job_desc_sections)
+
         except Exception as e:
+            self.logger.error(f"Error parsing job offer: {e}")
             return None
 
         else:
             return JobItem(
                 job_title=job_title,
                 job_url=job_offer_url,
+                job_description=job_description,
                 salary=salary,
                 company_name=company_name,
                 company_sector=company_sector,

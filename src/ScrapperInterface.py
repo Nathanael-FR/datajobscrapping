@@ -75,7 +75,7 @@ class Scrapper(ABC):
         except Exception as e:
 
             self.logger.error(f"{e}. Error extracting text from {sel}")
-            raise e
+            return None
 
     @abstractmethod
     def get_max_jobs(self) -> int | None: pass
