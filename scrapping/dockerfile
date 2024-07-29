@@ -25,6 +25,9 @@ COPY /src /app
 COPY requirements.txt /app/requirements.txt
 COPY entrypoint.sh /app/entrypoint.sh
 
+# add the project directory to PYTHONPATH so that the modules can be imported
+ENV PYTHONPATH=/app 
+
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 RUN chmod a+x /app/entrypoint.sh

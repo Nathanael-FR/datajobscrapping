@@ -13,7 +13,7 @@ from logger import Logger
 
 class HelloWorkScrapper(Scrapper):
 
-    BASE_URL: str = "https://www.hellowork.com/fr-fr/emploi/recherche.html?k=Data+engineer+senior&k_autocomplete=&l=France&l_autocomplete=&p={}"
+    BASE_URL: str = "https://www.hellowork.com/fr-fr/emploi/recherche.html?k=Data+analyst+senior&k_autocomplete=&l=France&l_autocomplete=&p={}"
 
     COMPANY_FIELDS: list[str] = [
         "Agriculture • Pêche", "BTP", "Banque • Assurance • Finance", "Distribution • Commerce de gros",
@@ -75,7 +75,7 @@ class HelloWorkScrapper(Scrapper):
             job_title = self.extract_text(html, "span[data-cy='jobTitle']")
 
             location_and_contract = html.css(
-                "li.tw-tag-contract-s.tw-readonly")
+                "li.tw-tag-grey-s.tw-readonly")
             if location_and_contract:
                 job_location = location_and_contract[0].text(
                     deep=True).strip() if len(location_and_contract) > 0 else None
@@ -131,6 +131,53 @@ class HelloWorkScrapper(Scrapper):
                 publication_date=publication_date
             )
 
+    @staticmethod
+    def process_salary(salary: str | None) -> str:
+
+        if salary:
+            salary = salary.strip()\
+                .replace("\xa0", " ")\
+                .replace("\u202f", " ")
+
+            if "mois" in salary:
+                sal_low, sal_high = salary.split(" ")[0], salary.split(" ")[2]
+
+                return f'{float(sal_low.replace(",","."))*12} - {float(sal_high.replace(",","."))*12} EUR par an'
+
+            return salary
+
+    def run(self, filename: str):
+
+        data = []
+
+        html = self.get_html(self.BASE_URL, page=1)
+        max_pages = self.get_max_pages(html)
+        max_jobs = self.get_max_jobs(html)
+        self.logger.info(f"Found {max_jobs} job offers on {max_pages} page(s)")
+
+        for page in range(1, max_pages + 1):
+            html = self.get_html(self.BASE_URL, page=page)
+            if not html:
+                break
+
+            job_urls = self.parse_page(html)
+            for url in job_urls:
+                self.logger.info(f"Processing job offer: {url}")
+                job_item = self.parse_job_offer(url)
+                if job_item:
+                    self.logger.info(job_item.__str__())
+                    data.append(job_item.__dict__)
+                else:
+                    self.logger.error(f"Error while parsing job offer: {url}")
+                time.sleep(1)
+
+        df = pd.DataFrame(data)
+        self.logger.info("Processing data...")
+        df = self.process_df(df)
+        self.logger.info(
+            f"Scraped {len(df)} / {max_jobs} job offers. Saving to csv...")
+        df.to_csv(filename, index=False)
+
 
 if __name__ == "__main__":
     today = datetime.date.today().strftime("%Y-%m-%d")
@@ -146,6 +193,6 @@ if __name__ == "__main__":
         logger.error(f"Error loading to S3: {e}")
     else:
         os.remove(f"job_offers_HW_{today}.csv")
-        # os.remove(f"scrapping_{today}.log")
+        os.remove(f"scrapping_{today}.log")
 
     logger.info("*" * 50 + "End of scrapping" + "*" * 50)

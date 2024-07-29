@@ -1,0 +1,122 @@
+Python
+R
+SQL
+Java
+Scala
+Julia
+SAS
+MATLAB
+Ruby
+JavaScript
+Pandas
+NumPy
+SciPy
+Matplotlib
+Seaborn
+Scikit-learn
+TensorFlow
+Keras
+PyTorch
+NLTK
+spaCy
+Statsmodels
+Plotly
+Bokeh
+Dask
+XGBoost
+LightGBM
+CatBoost
+Hugging Face Transformers
+OpenCV
+FastAI
+Tableau
+Power BI
+QlikView
+Looker
+D3.js
+Grafana
+Metabase
+Superset
+Google Data Studio
+MySQL
+PostgreSQL
+SQLite
+Microsoft SQL Server
+MySQL
+Oracle Database
+IBM Db2
+MariaDB
+MongoDB
+Cassandra
+Redis
+CouchDB
+Neo4j
+Amazon DynamoDB
+HBase
+Couchbase
+Hadoop
+Apache
+Spark
+Kafka
+Flink
+Storm
+Samza
+Google BigQuery
+Amazon Redshift
+Snowflake
+Synapse Analytics
+Databricks
+NiFi
+Talend
+Informatica
+SSIS
+Pentaho
+Alteryx
+Airflow
+Stitch
+Fivetran
+Luigi
+AWS
+S3
+EC2
+EMR
+Redshift
+Athena
+Azure
+Data Lake
+SQL Database
+Databricks
+Synapse Analytics
+GCP
+BigQuery
+Dataflow
+Dataproc
+Pub/Sub
+Tableau
+Power BI
+QlikView
+Looker
+Domo
+Sisense
+MicroStrategy
+Jira
+Trello
+Asana
+Monday.com
+Basecamp
+ClickUp
+Git
+GitHub
+GitLab
+Bitbucket
+MLflow
+Kubeflow
+TFX
+Seldon
+ModelDB
+Docker
+Kubernetes
+Prefect
+DVC
+Great Expectations
+dbt

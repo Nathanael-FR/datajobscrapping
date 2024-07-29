@@ -6,21 +6,53 @@
 
   tasks:
 
-    - name: Pull Docker image 
+
+    - name: Pull Postgres image 
       community.docker.docker_image:
-        name: "{{ docker_image }}"
+        name: "{{ dockerhub_username }}/mypostgres:{{ push_id }}"
+        source: pull
+    
+    - name: Pull Webscraper image
+      community.docker.docker_image:
+        name: "{{ dockerhub_username }}/webscraper:{{ push_id }}"
         source: pull
 
-    - name: Stop and remove existing container
+    - name: Create a volume for Postgres data
+      community.docker.docker_volume:
+        name: postgres_data
+        state: present
+
+   - name: Stop and remove existing Postgres container
+      community.docker.docker_container:
+        name: mypostgres
+        state: absent
+      ignore_errors: yes
+
+    - name: Stop and remove existing Webscraper container
       community.docker.docker_container:
         name: webscraper
         state: absent
       ignore_errors: yes
 
-    - name: Run Docker container on VPS
+    - name: Run Postgres container on VPS
+      community.docker.docker_container:
+        name: mypostgres
+        image: "{{ dockerhub_username }}/mypostgres:{{ push_id }}"
+        state: started
+        restart_policy: always
+        volumes:
+          - postgres_data:/var/lib/postgresql/data
+        env:
+          POSTGRES_USER: "{{ postgres_user }}"
+          POSTGRES_PASSWORD: "{{ postgres_password }}"
+          POSTGRES_DB: "{{ postgres_db }}"
+        networks:
+          - name: webscraper_network
+
+    - name: Run Webscraper containers on VPS
       community.docker.docker_container:
         name: webscraper
-        image: "{{ docker_image }}"
+        image: "{{ webscraper_image }}"
         state: started
         restart_policy: always
         image_name_mismatch: recreate
@@ -28,6 +60,11 @@
           AWS_ACCESS_KEY_ID: "{{ aws_access_key_id }}"
           AWS_SECRET_ACCESS_KEY: "{{ aws_secret_access_key }}"
           S3_BUCKET_NAME: "{{ s3_bucket_name }}"
+          DB_HOST: "mypostgres"
+          DB_PORT: "5432"
+          DB_NAME: "{{ postgres_db }}"
+        networks:
+          - name: webscraper_network
 
     - name: Grab container status
       community.docker.docker_container_info:

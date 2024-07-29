@@ -9,7 +9,7 @@ class Logger:
             self.logger.setLevel(logging.INFO)
 
             # File handler
-            file_handler = logging.FileHandler(self.log_file)
+            file_handler = logging.FileHandler(self.log_file, encoding='utf-8')
             file_formatter = logging.Formatter(
                 '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             file_handler.setFormatter(file_formatter)

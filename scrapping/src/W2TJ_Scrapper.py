@@ -15,7 +15,7 @@ from logger import Logger
 
 class W2TJScrapper(Scrapper):
 
-    BASE_URL: str = "https://www.welcometothejungle.com/fr/jobs?refinementList%5Boffices.country_code%5D%5B%5D=FR&query=data%20engineer%20senior&page={}&aroundQuery=France"
+    BASE_URL: str = "https://www.welcometothejungle.com/fr/jobs?refinementList%5Boffices.country_code%5D%5B%5D=FR&query=data%20scientist%20senior&page={}&aroundQuery=France"
 
     def start_webdriver(self):
 
@@ -93,10 +93,13 @@ class W2TJScrapper(Scrapper):
 
     def parse_job_offer(self, job_offer_url: str) -> JobItem:
 
-        html = self.get_html(job_offer_url)
-
-        if not html:
-            return None
+        try:
+            html = self.get_html(job_offer_url)
+        except TimeoutError:
+            raise TimeoutError
+        else:
+            if not html:
+                return None
 
         try:
             job_title = self.extract_text(
@@ -155,6 +158,22 @@ class W2TJScrapper(Scrapper):
                 company_sector=company_sector
             )
 
+    @staticmethod
+    def process_salary(salary: str) -> str:
+
+        salary = salary.replace("Salaire : ", "")\
+            .strip()\
+            .replace("\xa0", " ")\
+            .replace("\u202f", " ")\
+
+        # 45 à 62 € -> 45K à 62K €
+        pattern = re.compile(r'(\b\d{2}) ')
+        salary = pattern.sub(r'\1K ', salary)
+
+        return salary.replace("Non spécifié", "")\
+            .replace(" 000", "K")\
+            .replace("à", "-")
+
     def run(self, filename: str):
 
         data = []
@@ -174,16 +193,21 @@ class W2TJScrapper(Scrapper):
                 job_urls = self.parse_page(html)
                 for url in job_urls:
                     logger.info(f"Processing job offer: {url}")
-                    job_item = self.parse_job_offer(url)
-                    if job_item:
-                        # self.logger.info(job_item.job_description[:100])
-                        self.logger.info(job_item.__dict__)
-                        data.append(job_item.__dict__)
+                    try:
+                        job_item = self.parse_job_offer(url)
+                    except TimeoutError:
+                        break
                     else:
-                        print(f"Error while parsing job offer: {url}")
-                    time.sleep(1)
+                        if job_item:
+                            self.logger.info(job_item.__str__())
+                            data.append(job_item.__dict__)
+                        else:
+                            print(f"Error while parsing job offer: {url}")
+                        time.sleep(1)
 
             df = pd.DataFrame(data)
+
+            df = self.process_df(df)
             logger.info(
                 f"Scraped {len(df)} / {max_jobs} job offers. Saving to job_offers.csv...")
             df.to_csv(filename, index=False)
