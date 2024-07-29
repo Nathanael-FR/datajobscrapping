@@ -6,7 +6,8 @@ on:
       - main
 
 jobs:
-  build:
+
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
@@ -36,6 +37,11 @@ jobs:
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/mypostgres:${{ github.run_id }}
 
+  test: 
+
+    - name : create docker network
+      run: docker network create webscraper_network
+
     - name : Run postgres container
       run: |
         docker run -d \
@@ -43,7 +49,6 @@ jobs:
           -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
           -e POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
           -v postgres_data:/var/lib/postgresql/data \
-          --network webscraper_network \
           ${{ secrets.DOCKERHUB_USERNAME }}/mypostgres:${{ github.run_id }}
 
     - name: Assert `joboffers` table exists
@@ -67,7 +72,6 @@ jobs:
           -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
           -e AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }} \
           -e S3_BUCKET_NAME=jobscrappingbucket \
-          --network webscraper_network \
           ${{ secrets.DOCKERHUB_USERNAME }}/webscraper:${{ github.run_id }}
 
     - name: Check running container

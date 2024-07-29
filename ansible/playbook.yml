@@ -25,13 +25,11 @@
       community.docker.docker_container:
         name: mypostgres
         state: absent
-        ignore_errors: yes
 
     - name: Stop and remove existing Webscraper container
       community.docker.docker_container:
         name: webscraper
         state: absent
-        ignore_errors: yes
 
     - name: Run Postgres container on VPS
       community.docker.docker_container:
