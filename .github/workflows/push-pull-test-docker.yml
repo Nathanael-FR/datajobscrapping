@@ -53,7 +53,7 @@ jobs:
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-        
+
     - name : create docker network
       run: docker network create webscraper_network
 
@@ -64,7 +64,7 @@ jobs:
           -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
           -e POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
           -v postgres_data:/var/lib/postgresql/data \
-          -- name mypostgres \
+          --name mypostgres \
           ${{ secrets.DOCKERHUB_USERNAME }}/mypostgres:${{ github.run_id }}
 
     - name: Assert `joboffers` table exists
