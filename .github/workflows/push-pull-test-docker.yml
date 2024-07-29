@@ -1,0 +1,92 @@
+name: Build, Push, and Test containers
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push webscraper image
+      uses: docker/build-push-action@v3
+      with:
+        context: ./scrapping
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/webscraper:${{ github.run_id }}
+
+    - name: Build and push postgres image
+      uses: docker/build-push-action@v3
+      with:
+        context: ./db
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/mypostgres:${{ github.run_id }}
+
+    - name : Run postgres container
+      run: |
+        docker run -d \
+          -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+          -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+          -e POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
+          -v postgres_data:/var/lib/postgresql/data \
+          --network webscraper_network \
+          ${{ secrets.DOCKERHUB_USERNAME }}/mypostgres:${{ github.run_id }}
+
+    - name: Assert `joboffers` table exists
+      run: |
+        docker exec mypostgres psql -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }} -tc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'joboffers');"
+      id: check_table
+    - name: Check table existence result
+      run: |
+        if [ "${{ steps.check_table.outputs.result }}" != "t" ]; then
+          echo "Table 'joboffers' does not exist"
+          exit 1
+        else
+          echo "Table 'joboffers' exists"
+        fi
+      id: verify_table_existence
+
+    - name: Run webscrapping container
+      run: |
+        docker run -d \
+          -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+          -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+          -e AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }} \
+          -e S3_BUCKET_NAME=jobscrappingbucket \
+          --network webscraper_network \
+          ${{ secrets.DOCKERHUB_USERNAME }}/webscraper:${{ github.run_id }}
+
+    - name: Check running container
+      run: |
+        container_id=$(docker ps -q --filter "name=webscraper_container")
+        if [ -z "$container_id" ]; then
+          echo "Container is not running"
+          exit 1
+        fi
+
+        container_status=$(docker inspect --format '{{ .State.Status }}' $container_id)
+        if [ "$container_status" != "running" ]; then
+          echo "Container is not running, status is $container_status"
+          exit 1
+        else
+          echo "Container is running"
+        fi
+
+    - name: Verify crontab in container
+      run: |
+        docker exec webscraper_container crontab -l > container_crontab
+        diff scrapping/crontab container_crontab
