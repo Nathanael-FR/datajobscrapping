@@ -106,9 +106,9 @@ jobs:
           -e "dockerhub_username=${{ env.DOCKERHUB_USERNAME }}" \
           -e "aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
           -e "aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
-          -e "s3_bucket_name=${{ env.S3_BUCKET_NAME }}"
-          -e "postgres_user=${{ secrets.POSTGRES_USER }}"
-          -e "postgres_password=${{ secrets.POSTGRES_PASSWORD }}"
+          -e "s3_bucket_name=${{ env.S3_BUCKET_NAME }}" \
+          -e "postgres_user=${{ secrets.POSTGRES_USER }}" \
+          -e "postgres_password=${{ secrets.POSTGRES_PASSWORD }}" \
           -e "postgres_db=${{ secrets.POSTGRES_DB }}"
 
 
