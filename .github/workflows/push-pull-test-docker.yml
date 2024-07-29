@@ -38,6 +38,7 @@ jobs:
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/mypostgres:${{ github.run_id }}
 
   test:
+    needs: build-and-push
     runs-on: ubuntu-latest  
 
     steps:
@@ -47,7 +48,7 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
     
-    
+
     - name : create docker network
       run: docker network create webscraper_network
 
