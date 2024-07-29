@@ -1,11 +1,10 @@
 ---
-- name: Deploy Docker container on VPS
+- name: Pull images and deploy containers on VPS
   hosts: vps
   gather_facts: false
   become: true
 
   tasks:
-
 
     - name: Pull Postgres image 
       community.docker.docker_image:
@@ -22,11 +21,11 @@
         name: postgres_data
         state: present
 
-   - name: Stop and remove existing Postgres container
-      community.docker.docker_container:
-        name: mypostgres
-        state: absent
-      ignore_errors: yes
+    - name: Stop and remove existing Postgres container
+        community.docker.docker_container:
+          name: mypostgres
+          state: absent
+        ignore_errors: yes
 
     - name: Stop and remove existing Webscraper container
       community.docker.docker_container:
