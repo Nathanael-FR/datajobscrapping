@@ -1,9 +1,10 @@
 name: Build, Push, and Test containers
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Build, Push, and Test containers"]
+    types:
+      - completed
 
 jobs:
 

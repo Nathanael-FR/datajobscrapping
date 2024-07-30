@@ -54,7 +54,7 @@
     - name: Run Webscraper containers on VPS
       community.docker.docker_container:
         name: webscraper
-        image: "{{ webscraper_image }}"
+        image: "{{ dockerhub_username }}/webscraper:{{ push_id }}"
         state: started
         restart_policy: always
         image_name_mismatch: recreate
