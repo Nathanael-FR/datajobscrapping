@@ -16,6 +16,10 @@
         name: "{{ dockerhub_username }}/webscraper:{{ push_id }}"
         source: pull
 
+    - name: Prune all unused images
+      community.docker.docker_prune:
+        images: yes
+
     - name: Create a volume for Postgres data
       community.docker.docker_volume:
         name: postgres_data
