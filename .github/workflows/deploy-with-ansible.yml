@@ -1,9 +1,10 @@
 name: Deploy with Ansible
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["push-pull-test-docker"]
+    types:
+      - completed
 
 jobs:
 

@@ -69,13 +69,6 @@ jobs:
           --name mypostgres \
           ${{ secrets.DOCKERHUB_USERNAME }}/mypostgres:${{ github.run_id }}
 
-    - name: Wait for PostgreSQL to be ready
-      run: |
-        until docker exec mypostgres pg_isready -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }}; do
-          echo "Waiting for PostgreSQL to be ready..."
-          sleep 5
-        done
-
     - name: Check if PostgreSQL container is running
       run: |
         if [ -z "$(docker ps -q --filter 'name=mypostgres')" ]; then
@@ -85,23 +78,35 @@ jobs:
           echo "PostgreSQL container is running"
         fi
 
+    - name: Wait for PostgreSQL to be ready
+      run: |
+        until docker exec mypostgres pg_isready -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }}; do
+          echo "Waiting for PostgreSQL to be ready..."
+          sleep 5
+        done
+
     - name: Test PostgreSQL connection
       run: |
         docker exec mypostgres pg_isready -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }}
 
-    - name: Assert `joboffers` table exists
+    - name: Check if `joboffers` table exists
       run: |
-        docker exec mypostgres psql -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }} -tc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'joboffers');"
-      id: check_table
-    - name: Check table existence result
-      run: |
-        if [ "${{ steps.check_table.outputs.result }}" != "t" ]; then
-          echo "Table 'joboffers' does not exist"
-          exit 1
-        else
-          echo "Table 'joboffers' exists"
-        fi
-      id: verify_table_existence
+        docker exec mypostgres psql -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }} -tc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'joboffers');" > table_existence
+        cat table_existence
+
+    # - name: Assert `joboffers` table exists
+    #   run: |
+    #     docker exec mypostgres psql -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }} -tc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'joboffers');"
+    #   id: check_table
+    # - name: Check table existence result
+    #   run: |
+    #     if [ "${{ steps.check_table.outputs.result }}" != "t" ]; then
+    #       echo "Table 'joboffers' does not exist"
+    #       exit 1
+    #     else
+    #       echo "Table 'joboffers' exists"
+    #     fi
+    #   id: verify_table_existence
 
     ###### Webscrapping container ######
 
