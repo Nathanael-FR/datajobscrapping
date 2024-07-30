@@ -57,6 +57,8 @@ jobs:
     - name : create docker network
       run: docker network create webscraper_network
 
+    ###### PostgreSQL container ######
+
     - name : Run postgres container
       run: |
         docker run -d \
@@ -66,6 +68,19 @@ jobs:
           -v postgres_data:/var/lib/postgresql/data \
           --name mypostgres \
           ${{ secrets.DOCKERHUB_USERNAME }}/mypostgres:${{ github.run_id }}
+
+    - name: Check if PostgreSQL container is running
+      run: |
+        if [ -z "$(docker ps -q --filter 'name=mypostgres')" ]; then
+          echo "PostgreSQL container is not running"
+          exit 1
+        else
+          echo "PostgreSQL container is running"
+        fi
+
+    - name: Test PostgreSQL connection
+      run: |
+        docker exec mypostgres pg_isready -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }}
 
     - name: Assert `joboffers` table exists
       run: |
@@ -80,6 +95,8 @@ jobs:
           echo "Table 'joboffers' exists"
         fi
       id: verify_table_existence
+
+    ###### Webscrapping container ######
 
     - name: Run webscrapping container
       run: |
