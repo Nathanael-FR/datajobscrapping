@@ -89,10 +89,9 @@ jobs:
       run: |
         docker exec mypostgres pg_isready -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }}
 
-    - name: Check if `joboffers` table exists
+    - name: Check tables in database
       run: |
-        docker exec mypostgres psql -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }} -tc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'joboffers');" > table_existence
-        cat table_existence
+        docker exec mypostgres psql -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }} -c "\dt"
 
     # - name: Assert `joboffers` table exists
     #   run: |
@@ -117,6 +116,7 @@ jobs:
           -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
           -e AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }} \
           -e S3_BUCKET_NAME=jobscrappingbucket \
+          --name webscraper_container \
           ${{ secrets.DOCKERHUB_USERNAME }}/webscraper:${{ github.run_id }}
 
     - name: Check running container
