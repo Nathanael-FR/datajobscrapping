@@ -37,7 +37,7 @@ jobs:
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/mypostgres:${{ github.run_id }}
 
-  test:
+  tests:
     needs: build-and-push
     runs-on: ubuntu-latest  
 
@@ -139,3 +139,9 @@ jobs:
       run: |
         docker exec webscraper_container crontab -l > container_crontab
         diff scrapping/crontab container_crontab
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: tests-success
+        path: success.txt

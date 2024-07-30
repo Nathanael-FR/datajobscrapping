@@ -2,18 +2,22 @@ name: Deploy with Ansible
 
 on:
   workflow_run:
-    workflows: ["push-pull-test-docker"]
+    workflows: ["push-pull-test-docker", "test-s3-connection"]
     types:
       - completed
 
 jobs:
-
   build-and-push:
     runs-on: ubuntu-latest
-
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: tests-success
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
