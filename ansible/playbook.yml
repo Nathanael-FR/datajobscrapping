@@ -16,10 +16,6 @@
         name: "{{ dockerhub_username }}/webscraper:{{ push_id }}"
         source: pull
 
-    - name: Prune all unused images
-      community.docker.docker_prune:
-        images: yes
-
     - name: Create a volume for Postgres data
       community.docker.docker_volume:
         name: postgres_data
@@ -90,3 +86,7 @@
         docker exec webscraper python3 -c "import os; assert os.environ['S3_BUCKET_NAME'] == '{{ s3_bucket_name }}'"
 
       ignore_errors: yes
+
+    - name: Remove ununsed images (prune -a)
+      shell : docker image prune -a -f
+      
