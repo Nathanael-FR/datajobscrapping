@@ -1,0 +1,9 @@
+FROM apache/airflow:slim-2.9.3-python3.10
+
+COPY requirements.txt /opt/airflow/requirements.txt
+COPY entrypoint.sh /opt/airflow/entrypoint.sh
+
+COPY dags /opt/airflow/dags
+COPY src /opt/airflow/src
+
+ENTRYPOINT ["/opt/airflow/entrypoint.sh"]

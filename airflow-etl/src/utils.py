@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 
-def connect_to_s3() -> boto3.client | None:
+def connect_to_s3():
 
     try:
         session = boto3.Session(

@@ -1,6 +1,6 @@
 import psycopg2
 import os
-from scrapping.src.models import JobItem
+from models import JobItem
 
 
 def get_conn():
@@ -16,13 +16,6 @@ def get_conn():
         return None
     else:
         return conn
-
-
-def check_table_exists(conn, table_name: str = "joboffers") -> bool:
-    cursor = conn.cursor()
-    cursor.execute(
-        f"SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = '{table_name}');")
-    return cursor.fetchone()[0]
 
 
 def insert_job_offer(conn, job_offer: JobItem):
