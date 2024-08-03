@@ -1,6 +1,6 @@
 import psycopg2
 import os
-from models import JobItem
+from scrapping.src.models import JobItem
 
 
 def get_conn():

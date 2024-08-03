@@ -1,11 +1,13 @@
-from airflow import DAG
-from airflow.operators.python import PythonOperator
-from airflow.decorators import task
-from datetime import datetime, timedelta
 import pandas as pd
-from src.postgres import get_conn, insert_job_offer
-from src.utils import connect_to_s3, download_csv_files, create_df, remove_tmp_folder
-from src.models import JobItem
+from datetime import datetime, timedelta
+from airflow.decorators import task
+from airflow.operators.python import PythonOperator
+from airflow import DAG
+from scrapping.src.models import JobItemProcessed
+from airflow_etl.src.utils import connect_to_s3, download_csv_files, create_df, remove_tmp_folder
+from airflow_etl.src.postgres import get_conn, insert_job_offer
+import sys
+import os
 
 default_args = {
     'owner': 'airflow',
@@ -46,7 +48,7 @@ with DAG(
             for _, row in df.iterrows():
                 job_offer: dict = row.to_dict()
                 try:
-                    job = JobItem(**job_offer)
+                    job = JobItemProcessed(**job_offer)
                     insert_job_offer(conn, job)
                 except Exception as e:
                     print(e)

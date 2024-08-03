@@ -173,14 +173,14 @@ class Scrapper(ABC):
 
         return job_type
 
-    def get_skills_desc(self, job_desc: str) -> str:
+    def get_skills_desc(self, job_desc: str) -> list[str]:
         """ Retrieve skills mentionned in job description. """
 
         words = set(job_desc.split())
         skills_mentionned = self.SKILLS.intersection(words)
         return list(skills_mentionned)
 
-    def get_skills_title(self, job_title: str) -> str:
+    def get_skills_title(self, job_title: str) -> list[str]:
         """ Retrieve skills & programming lang mentionned in job title. """
 
         langs = scrape_prog_lang()

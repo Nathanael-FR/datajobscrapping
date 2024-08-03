@@ -39,8 +39,6 @@ def download_csv_files(s3) -> None:
 def create_df() -> pd.DataFrame:
     """ return a pandas dataframe from the csv files """
     dir = os.path.join(os.getcwd(), "tmp")
-    print(dir)
-
     # Get all the absolute paths of the csv files
     csv_files = [os.path.join(dir, f)
                  for f in os.listdir(dir) if f.endswith('.csv')]

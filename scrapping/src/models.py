@@ -29,3 +29,8 @@ class JobItem:
 
     def __repr__(self) -> str:
         pass
+
+
+@dataclass
+class JobItemProcessed(JobItem):
+    skills: list[str] | None
