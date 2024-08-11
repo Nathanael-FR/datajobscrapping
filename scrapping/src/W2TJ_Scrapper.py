@@ -152,7 +152,7 @@ class W2TJScrapper(Scrapper):
                 location=job_location,
                 contract_type=contract_type,
                 salary=salary,
-                remote=remote,
+                remote_type=remote,
                 publication_date=publication_date,
                 company_logo_url=company_logo_url,
                 company_sector=company_sector
@@ -225,8 +225,8 @@ if __name__ == "__main__":
     scrapper.run(filename=f"job_offers_W2TJ_{today}.csv")
 
     try:
-        scrapper.load_to_s3(f"job_offers_W2TJ_{today}.csv")
         scrapper.load_to_s3(f"scrapping_{today}.log")
+        scrapper.load_to_s3(f"job_offers_W2TJ_{today}.csv")
     except Exception as e:
         logger.error(f"Error loading to S3: {e}")
     else:

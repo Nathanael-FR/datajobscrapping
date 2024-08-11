@@ -127,7 +127,7 @@ class HelloWorkScrapper(Scrapper):
                 company_logo_url=company_logo_url,
                 location=job_location,
                 contract_type=contract_type,
-                remote=remote,
+                remote_type=remote,
                 publication_date=publication_date
             )
 
@@ -187,8 +187,8 @@ if __name__ == "__main__":
     scrapper.run(filename=f"job_offers_HW_{today}.csv")
 
     try:
-        scrapper.load_to_s3(f"job_offers_HW_{today}.csv")
         scrapper.load_to_s3(f"scrapping_{today}.log")
+        scrapper.load_to_s3(f"job_offers_HW_{today}.csv")
     except Exception as e:
         logger.error(f"Error loading to S3: {e}")
     else:

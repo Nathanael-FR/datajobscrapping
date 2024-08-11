@@ -12,7 +12,7 @@ class JobItem:
     company_logo_url: str | None
     location: str | None
     contract_type: str | None
-    remote: str | None
+    remote_type: str | None
     publication_date: str | None
 
     def __str__(self) -> str:

@@ -196,7 +196,7 @@ class Scrapper(ABC):
                 lambda x: self.get_skills_title(x))
 
         df["salary"] = df["salary"].apply(lambda x: self.process_salary(x))
-        df["remote"] = df["remote"].apply(lambda x: self.process_remote(x))
+        df["remote_type"] = df["remote_type"].apply(lambda x: self.process_remote(x))
         df["contract_type"] = df["contract_type"].apply(
             lambda x: self.process_contract_type(x))
         df["job_title"] = df["job_title"].apply(
