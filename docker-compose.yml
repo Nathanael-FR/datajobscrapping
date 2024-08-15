@@ -4,12 +4,15 @@ services:
 
   airflow-postgres:
     image: postgres:14.1-alpine
+    container_name: airflow-postgres
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
+    networks:
+      - airflow-network
     volumes:
-      - airflow-pgdata:/var/lib/postgresql/data
+      - airflow_pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 5s
@@ -18,7 +21,7 @@ services:
 
   webserver:
     build:
-      context: ./airflow-etl
+      context: ./airflow
     container_name: airflow_webserver
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -26,6 +29,10 @@ services:
       AIRFLOW__CORE__FERNET_KEY: 'L_x43MRdzsoGOzCGwqcLhcpOZ6fQMrvNw_AT89oKdl4='
       AIRFLOW__WEBSERVER__SECRET_KEY: 'YOUR_SECRET_KEY_HERE'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    env_file:
+      - .env
+    networks:
+      - airflow-network
     ports:
       - 8082:8080
     depends_on:
@@ -40,23 +47,26 @@ services:
 
   scheduler:
     build:
-      context: ./airflow-etl
+      context: ./airflow
     container_name: airflow_scheduler
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
       AIRFLOW__CORE__FERNET_KEY: 'L_x43MRdzsoGOzCGwqcLhcpOZ6fQMrvNw_AT89oKdl4='
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    networks:
+      - airflow-network
     volumes:
-      - ./airflow-etl/dags:/opt/airflow/dags
-      - ./airflow-etl/src:/opt/airflow/src
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/utils:/opt/airflow/utils
     depends_on:
       airflow-postgres:
         condition: service_healthy
     command: ["airflow", "scheduler"]
 
   webscrapper:
-    build: ./scrapping
+    build: 
+      context: ./scrapping
     container_name: webscrapper
     depends_on:
       - postgres
@@ -75,6 +85,7 @@ services:
       - pg-data:/var/lib/postgresql/data
     networks:
       - webscrapper-network
+      - airflow-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 5s
@@ -93,7 +104,7 @@ services:
 
 networks:
   webscrapper-network:
-
+  airflow-network:
 volumes:
-  airflow-pgdata:
+  airflow_pgdata:
   pg-data:

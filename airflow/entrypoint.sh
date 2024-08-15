@@ -1,11 +1,16 @@
 #!/bin/bash
 set -e
 
-export PYTHONPATH=/opt/airflow/src:/opt/airflow/dags:$PYTHONPATH
-
 if [ -e "/opt/airflow/requirements.txt" ]; then
   $(command -v python) -m pip install --upgrade pip
   $(command -v pip) install -r /opt/airflow/requirements.txt
+fi
+
+# cd into the airflow directory and pip install -e . to install the app modules
+cd /opt/airflow
+
+if [ -e "/opt/airflow/setup.py" ]; then
+  $(command -v pip) install -e .
 fi
 
 if [ ! -f "/opt/airflow/airflow.db" ]; then

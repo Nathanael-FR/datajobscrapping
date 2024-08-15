@@ -38,6 +38,14 @@ jobs:
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/mypostgres:${{ github.run_id }}
 
+
+    - name: Build and push airflow image
+      uses: docker/build-push-action@v3
+      with:
+        context: ./db
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/airflow:${{ github.run_id }}
+
   tests:
     needs: build-and-push
     runs-on: ubuntu-latest  
@@ -55,8 +63,11 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name : create docker network
+    - name : create webscraper network
       run: docker network create webscraper_network
+
+    - name : create network network
+      run: docker network create airflow_network
 
     ###### PostgreSQL container ######
 
@@ -94,19 +105,6 @@ jobs:
       run: |
         docker exec mypostgres psql -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }} -c "\dt"
 
-    # - name: Assert `joboffers` table exists
-    #   run: |
-    #     docker exec mypostgres psql -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }} -tc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'joboffers');"
-    #   id: check_table
-    # - name: Check table existence result
-    #   run: |
-    #     if [ "${{ steps.check_table.outputs.result }}" != "t" ]; then
-    #       echo "Table 'joboffers' does not exist"
-    #       exit 1
-    #     else
-    #       echo "Table 'joboffers' exists"
-    #     fi
-    #   id: verify_table_existence
 
     ###### Webscrapping container ######
 
@@ -141,3 +139,71 @@ jobs:
         docker exec webscraper_container crontab -l > container_crontab
         diff scrapping/crontab container_crontab
     
+    
+    ###### Airflow stack containers ######
+
+    - name: Run airflow-postgres container
+      run: |
+        docker run -d \
+          -e POSTGRES_USER=airflow \
+          -e POSTGRES_PASSWORD=airflow \
+          -e POSTGRES_DB=airflow \
+          -v airflow_pgdata:/var/lib/postgresql/data \
+          --name airflow-postgres \
+          --network airflow_network \
+          postgres:14.1-alpine 
+
+    - name: Run airflow-webserver container
+      run: |
+        docker run -d \
+          -e AIRFLOW__CORE__EXECUTOR=LocalExecutor \
+          -e AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow \
+          -e AIRFLOW__CORE__FERNET_KEY='L_x43MRdzsoGOzCGwqcLhcpOZ6fQMrvNw_AT89oKdl4=' \
+          -e AIRFLOW__WEBSERVER__SECRET_KEY='YOUR_SECRET_KEY_HERE' \
+          -e AIRFLOW__CORE__LOAD_EXAMPLES='false' \
+          --env-file .env \
+          --name airflow_webserver \
+          --network airflow_network \
+          -p 8082:8080 \
+          --health-cmd="[ -f /opt/airflow/airflow-webserver.pid ]" \
+          --health-interval=30s \
+          --health-timeout=30s \
+          --health-retries=3 \
+          --depends-on airflow-postgres \
+          ${{ secrets.DOCKERHUB_USERNAME }}/airflow:${{ github.run_id }} 
+          airflow webserver
+
+    - name: Run airflow-scheduler container
+      run: |
+        docker run -d \
+          -e AIRFLOW__CORE__EXECUTOR=LocalExecutor \
+          -e AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow \
+          -e AIRFLOW__CORE__FERNET_KEY='L_x43MRdzsoGOzCGwqcLhcpOZ6fQMrvNw_AT89oKdl4=' \
+          -e AIRFLOW__CORE__LOAD_EXAMPLES='false' \
+          -v ./airflow/dags:/opt/airflow/dags \
+          -v ./airflow/utils:/opt/airflow/utils \
+          --name airflow_scheduler \
+          --network airflow_network \
+          --depends-on airflow-postgres \
+          ${{ secrets.DOCKERHUB_USERNAME }}/airflow:${{ github.run_id }} 
+          airflow scheduler
+
+    - name: Check if Airflow containers are running
+      run: |
+        if [ -z "$(docker ps -q --filter 'name=airflow_webserver')" ]; then
+          echo "Airflow webserver container is not running"
+          exit 1
+        else
+          echo "Airflow webserver container is running"
+        fi
+
+        if [ -z "$(docker ps -q --filter 'name=airflow_scheduler')" ]; then
+          echo "Airflow scheduler container is not running"
+          exit 1
+        else
+          echo "Airflow scheduler container is running"
+        fi
+    
+    - name: Run dag tests
+      run: |
+        docker exec airflow_webserver cd /opt/airflow/dags && python s3_to_db.py

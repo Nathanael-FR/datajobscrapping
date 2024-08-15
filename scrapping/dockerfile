@@ -34,8 +34,8 @@ RUN chmod a+x /app/entrypoint.sh
 RUN chmod a+x /app/HW_Scrapper.py
 RUN chmod a+x /app/W2TJ_Scrapper.py
 
-RUN echo '0 9 * * * /usr/local/bin/python /app/HW_Scrapper.py >> /var/log/hw_scrapping.log 2>&1' > /etc/cron.d/my-crontab
-RUN echo '0 9 * * * /usr/local/bin/python /app/W2TJ_Scrapper.py >> /var/log/w2tj_scrapping.log 2>&1' >> /etc/cron.d/my-crontab
+RUN echo '15 12 * * * /usr/local/bin/python /app/HW_Scrapper.py >> /var/log/hw_scrapping.log 2>&1' > /etc/cron.d/my-crontab
+RUN echo '15 12 * * * /usr/local/bin/python /app/W2TJ_Scrapper.py >> /var/log/w2tj_scrapping.log 2>&1' >> /etc/cron.d/my-crontab
 
 RUN chmod 0644 /etc/cron.d/my-crontab && crontab /etc/cron.d/my-crontab
 

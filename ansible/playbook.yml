@@ -31,9 +31,14 @@
         name: webscraper
         state: absent
 
-    - name: Create network for the containers
+    - name: Create webscraper network for the containers
       community.docker.docker_network:
         name: webscraper_network
+        state: present
+
+    - name: Create airflow network for the containers
+      community.docker.docker_network:
+        name: airflow_network
         state: present
 
     - name: Run Postgres container on VPS
@@ -86,6 +91,15 @@
         docker exec webscraper python3 -c "import os; assert os.environ['S3_BUCKET_NAME'] == '{{ s3_bucket_name }}'"
 
       ignore_errors: yes
+
+    ###### Run airflow stack ######
+
+    - name: Pull Airflow image
+      community.docker.docker_image:
+        name: "{{ dockerhub_username }}/airflow:{{ push_id }}"
+        source: pull
+
+    ###### Clean up unused images ######
 
     - name: Remove ununsed images (prune -a)
       shell : docker image prune -a -f
