@@ -99,6 +99,7 @@ class W2TJScrapper(Scrapper):
             raise TimeoutError
         else:
             if not html:
+                self.logger.error(f"Error while requesting {job_offer_url}")
                 return None
 
         try:
@@ -123,7 +124,9 @@ class W2TJScrapper(Scrapper):
                 locations = html.css("span[class='q7vo0q-1 jubwAZ']")
                 job_location = ", ".join([location.text(deep=True)
                                           for location in locations])
-
+            else :
+                job_location = None
+                
             publication_date = self.extract_text(
                 html, 'time', attri='datetime')
             company_logo_url = self.extract_logo_url(html, company_name)
@@ -196,11 +199,14 @@ class W2TJScrapper(Scrapper):
                     try:
                         job_item = self.parse_job_offer(url)
                     except TimeoutError:
-                        break
+                        self.logger.error(
+                            f"Timeout error while scraping {url}. Skipping...")
+                        continue
                     else:
                         if job_item:
                             self.logger.info(job_item.__str__())
                             data.append(job_item.__dict__)
+                            self.logger.info(f"Job scraped ({len(data)} / {max_jobs}) \n")
                         else:
                             print(f"Error while parsing job offer: {url}")
                         time.sleep(1)
