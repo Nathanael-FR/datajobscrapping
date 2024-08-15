@@ -30,7 +30,7 @@ def download_csv_files(s3) -> None:
 
     bucket_name = os.environ["S3_BUCKET"]
     local_folder = os.path.join(os.getcwd(), "tmp")
-    s3_folder = "data//"
+    s3_folder = "data/"
 
     if not os.path.exists(local_folder):
         os.makedirs(local_folder)
