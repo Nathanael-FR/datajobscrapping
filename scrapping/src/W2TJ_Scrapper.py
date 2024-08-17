@@ -124,9 +124,9 @@ class W2TJScrapper(Scrapper):
                 locations = html.css("span[class='q7vo0q-1 jubwAZ']")
                 job_location = ", ".join([location.text(deep=True)
                                           for location in locations])
-            else :
+            else:
                 job_location = None
-                
+
             publication_date = self.extract_text(
                 html, 'time', attri='datetime')
             company_logo_url = self.extract_logo_url(html, company_name)
@@ -140,7 +140,8 @@ class W2TJScrapper(Scrapper):
             job_exp_section = self.extract_text(
                 html, 'div[data-testid="job-section-experience"]')
 
-            job_description = jobs_desc_section+"\n"+job_exp_section
+            job_description = jobs_desc_section+"\n" + \
+                job_exp_section if job_exp_section else jobs_desc_section
 
         except Exception as e:
             print(e)
@@ -206,7 +207,8 @@ class W2TJScrapper(Scrapper):
                         if job_item:
                             self.logger.info(job_item.__str__())
                             data.append(job_item.__dict__)
-                            self.logger.info(f"Job scraped ({len(data)} / {max_jobs}) \n")
+                            self.logger.info(
+                                f"Job scraped ({len(data)} / {max_jobs}) \n")
                         else:
                             print(f"Error while parsing job offer: {url}")
                         time.sleep(1)

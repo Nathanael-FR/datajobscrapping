@@ -8,7 +8,7 @@ from utils.s3 import connect_to_s3, download_csv_files, create_df, remove_tmp_fo
 from utils.models import JobItemProcessed
 from utils.logger import Logger
 
-# Importing required modules    
+# Importing required modules
 from datetime import datetime, timedelta
 from airflow.decorators import task
 from airflow.operators.python import PythonOperator
