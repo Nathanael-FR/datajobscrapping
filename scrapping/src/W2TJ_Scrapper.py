@@ -140,7 +140,7 @@ class W2TJScrapper(Scrapper):
             job_exp_section = self.extract_text(
                 html, 'div[data-testid="job-section-experience"]')
 
-            job_description = f"{jobs_desc_section}\n{job_exp_section}"
+            job_description = jobs_desc_section+"\n"+job_exp_section
 
         except Exception as e:
             print(e)

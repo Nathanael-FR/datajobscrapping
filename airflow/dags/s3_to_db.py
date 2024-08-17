@@ -14,6 +14,10 @@ from airflow.decorators import task
 from airflow.operators.python import PythonOperator
 from airflow import DAG
 
+log_dir = os.path.join(os.getcwd(), "logs")
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
 today = datetime.now().strftime("%Y-%m-%d")
 logger = Logger(f"etl_test_{today}.log").get_logger()
 

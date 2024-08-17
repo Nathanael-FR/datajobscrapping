@@ -173,27 +173,28 @@ class Scrapper(ABC):
 
         return job_type
 
-    def get_skills_desc(self, job_desc: str) -> list[str]:
+    def get_skills_desc(self, job_desc: str) -> str:
         """ Retrieve skills mentionned in job description. """
 
         words = set(job_desc.split())
         skills_mentionned = self.SKILLS.intersection(words)
-        return list(skills_mentionned)
+        return " ".join(list(skills_mentionned))
 
-    def get_skills_title(self, job_title: str) -> list[str]:
+    def get_skills_title(self, job_title: str) -> str:
         """ Retrieve skills & programming lang mentionned in job title. """
 
         langs = scrape_prog_lang()
         words = set(job_title.split())
         langs_mentionned = set(langs).intersection(words)
         skills_mentionned = self.SKILLS.intersection(words)
-        return list(langs_mentionned) + list(skills_mentionned)
+        return " ".join(list(langs_mentionned) + list(skills_mentionned))
 
     def process_df(self, df: pd.DataFrame) -> pd.DataFrame:
-
-        df["skills"] = df["job_description"].apply(
-            lambda x: self.get_skills_desc(x)) + df["job_title"].apply(
-                lambda x: self.get_skills_title(x))
+        
+    
+        df["skills"] = df["job_description"].apply(lambda x: self.get_skills_desc(x)) + \
+            df["job_title"].apply(lambda x: self.get_skills_title(x))
+            
 
         df["salary"] = df["salary"].apply(lambda x: self.process_salary(x))
         df["remote_type"] = df["remote_type"].apply(lambda x: self.process_remote(x))
@@ -203,6 +204,7 @@ class Scrapper(ABC):
             lambda x: self.process_job_title(x))
 
         return df
+
 
     def load_to_s3(self, filename: str) -> None:
 

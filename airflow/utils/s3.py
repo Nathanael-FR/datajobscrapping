@@ -1,22 +1,24 @@
 import boto3
 import os
-import pandas as pd
+import pandas as pd 
 from datetime import datetime
 from utils.logger import Logger
 
+log_dir = os.path.join(os.getcwd(), "logs")
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
 today = datetime.now().strftime("%Y-%m-%d")
-logger = Logger(f"etl_test_{today}.log").get_logger()
+logger = Logger(f"{log_dir}/etl_test_{today}.log").get_logger()
 
 
- 
-
-
-def connect_to_s3():
+def connect_to_s3() -> boto3.client:
 
     try:
         session = boto3.Session(
             aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
             aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+            region_name="us-east-1"
         )
     except Exception as e:
         logger.error(f'Error while connecting to S3: {e}')
@@ -37,6 +39,7 @@ def download_csv_files(s3) -> None:
         logger.info(f"Created folder {local_folder}")
 
     response = s3.list_objects_v2(Bucket=bucket_name, Prefix=s3_folder)
+    logger.info(f"Downloading csv files from {bucket_name}/{s3_folder}")
 
     for obj in response.get('Contents', []):
         if obj['Key'].endswith('.csv'):
@@ -45,7 +48,6 @@ def download_csv_files(s3) -> None:
                 local_folder, os.path.basename(obj['Key']))
             s3.download_file(bucket_name, obj['Key'], local_path)
             logger.info(f"Downloaded {obj['Key']} to {local_path}")
-            break  # We only need one file
 
 
 def create_df() -> pd.DataFrame:

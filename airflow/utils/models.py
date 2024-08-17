@@ -1,11 +1,10 @@
-from dataclasses import dataclass
-
+from dataclasses import dataclass   
 
 @dataclass
 class JobItem:
     job_title: str | None
     job_url: str | None
-    job_description: str | None
+    job_description: str | None 
     salary: str | None
     company_name: str | None
     company_sector: str | list[str] | None
@@ -33,4 +32,4 @@ class JobItem:
 
 @dataclass
 class JobItemProcessed(JobItem):
-    skills: list[str] | None
+    skills: list[str] | str | None

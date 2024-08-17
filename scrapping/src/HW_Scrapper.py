@@ -13,7 +13,7 @@ from logger import Logger
 
 class HelloWorkScrapper(Scrapper):
 
-    BASE_URL: str = "https://www.hellowork.com/fr-fr/emploi/recherche.html?k=Data+analyst+senior&k_autocomplete=&l=France&l_autocomplete=&p={}"
+    BASE_URL: str = "https://www.hellowork.com/fr-fr/emploi/recherche.html?k=Data+analyst+senior+junior&k_autocomplete=&l=France&l_autocomplete=&p={}"
 
     COMPANY_FIELDS: list[str] = [
         "Agriculture • Pêche", "BTP", "Banque • Assurance • Finance", "Distribution • Commerce de gros",
@@ -106,11 +106,13 @@ class HelloWorkScrapper(Scrapper):
                 html, "span.tw-block.tw-typo-xs.tw-text-grey.tw-mt-3.tw-break-words"))
             publication_date = publication_date.group() if publication_date else None
 
-            job_desc_sections = html.css(
+            job_desc_sections: list = html.css(
                 "p[class='tw-typo-long-m tw-mb-12 sm:tw-mb-14 tw-break-words']")
 
-            job_description = " ".join(
-                section.text(deep=True).strip() for section in job_desc_sections)
+            job_description: str = " ".join(
+                [section.text(deep=True).strip().replace(",", "").replace("'", " ")
+                 for section in job_desc_sections]
+            )
 
         except Exception as e:
             self.logger.error(f"Error parsing job offer: {e}")

@@ -6,6 +6,7 @@ from utils.logger import Logger
 today = datetime.now().strftime("%Y-%m-%d")
 logger = Logger(f"etl_test_{today}.log").get_logger()
 
+
 def get_conn():
     try:
         conn = psycopg2.connect(
@@ -23,18 +24,24 @@ def get_conn():
 
 
 def insert_job_offer(conn, job_offer: JobItemProcessed):
+
+    if job_offer.job_description.startswith('"'):
+        # if the description has been quoted when the data was converted to csv,
+        # remove the quotes
+        job_offer.job_description = job_offer.job_description[1:-1]
+
     cursor = conn.cursor()
     try:
         cursor.execute(
             f"""
             INSERT INTO joboffers(
-                job_title, job_url, job_desc, salary, company_name, company_sector,
-                company_logo_url, loc, contract_type, remote_type, publication_date, skills
+            job_title, job_url, job_desc, salary, company_name, company_sector,
+            company_logo_url, loc, contract_type, remote_type, publication_date, skills
             ) VALUES (
-                '{job_offer.job_title}', '{job_offer.job_url}', '{job_offer.job_description}', 
-                '{job_offer.salary}', '{job_offer.company_name}', '{job_offer.company_sector}',
-                '{job_offer.company_logo_url}', '{job_offer.location}', '{job_offer.contract_type}', 
-                '{job_offer.remote_type}', '{job_offer.publication_date}', '{job_offer.skills}'
+            '{job_offer.job_title}', '{job_offer.job_url}', '{job_offer.job_description}', 
+            '{job_offer.salary}', '{job_offer.company_name}', '{job_offer.company_sector}',
+            '{job_offer.company_logo_url}', '{job_offer.location}', '{job_offer.contract_type}', 
+            '{job_offer.remote_type}', '{job_offer.publication_date}', '{job_offer.skills}'
             )
             """
         )
@@ -75,7 +82,8 @@ if __name__ == "__main__":
         )
         cursor = conn.cursor()
         # remove the inserted data (last row)
-        cursor.execute("DELETE FROM joboffers WHERE company_name='Data Engineer Company'")
+        cursor.execute(
+            "DELETE FROM joboffers WHERE company_name='Data Engineer Company'")
         conn.commit()
         cursor.close()
         conn.close()

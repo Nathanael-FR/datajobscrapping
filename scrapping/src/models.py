@@ -33,4 +33,4 @@ class JobItem:
 
 @dataclass
 class JobItemProcessed(JobItem):
-    skills: list[str] | None
+    skills: str | None
