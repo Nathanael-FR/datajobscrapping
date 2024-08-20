@@ -50,6 +50,9 @@ with DAG(
     @task()
     def transform_data():
         df = create_df()
+        df["publication_date"].apply(
+            lambda x: datetime.strptime(x, '%d/%m/%Y').strftime('%Y-%m-%d'))
+
         logger.info("task (2/3) completed - Transformed data")
         return df
 

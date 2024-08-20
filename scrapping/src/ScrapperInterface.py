@@ -190,21 +190,19 @@ class Scrapper(ABC):
         return " ".join(list(langs_mentionned) + list(skills_mentionned))
 
     def process_df(self, df: pd.DataFrame) -> pd.DataFrame:
-        
-    
+
         df["skills"] = df["job_description"].apply(lambda x: self.get_skills_desc(x)) + \
             df["job_title"].apply(lambda x: self.get_skills_title(x))
-            
 
         df["salary"] = df["salary"].apply(lambda x: self.process_salary(x))
-        df["remote_type"] = df["remote_type"].apply(lambda x: self.process_remote(x))
+        df["remote_type"] = df["remote_type"].apply(
+            lambda x: self.process_remote(x))
         df["contract_type"] = df["contract_type"].apply(
             lambda x: self.process_contract_type(x))
         df["job_title"] = df["job_title"].apply(
             lambda x: self.process_job_title(x))
 
         return df
-
 
     def load_to_s3(self, filename: str) -> None:
 
