@@ -106,10 +106,14 @@ class HelloWorkScrapper(Scrapper):
                 html, "span.tw-block.tw-typo-xs.tw-text-grey.tw-mt-3.tw-break-words"))
             publication_date = publication_date.group() if publication_date else None
 
-            job_desc_sections: list = html.css(
-                "p[class='tw-typo-long-m tw-mb-12 sm:tw-mb-14 tw-break-words']")
+            tags = ["p[class='tw-typo-long-m tw-mb-12 sm:tw-mb-14 tw-break-words']",
+                    "p[class='tw-typo-long-m tw-mb-6 sm:tw-mb-8 tw-break-words']"]
+            for tag in tags:
+                job_desc_sections = html.css(tag)
+                if job_desc_sections:
+                    break
 
-            job_description: str = " ".join(
+            job_description = " ".join(
                 [section.text(deep=True).strip().replace(",", "").replace("'", " ")
                  for section in job_desc_sections]
             )
@@ -144,7 +148,7 @@ class HelloWorkScrapper(Scrapper):
             if "mois" in salary:
                 sal_low, sal_high = salary.split(" ")[0], salary.split(" ")[2]
 
-                return f'{float(sal_low.replace(",","."))*12} - {float(sal_high.replace(",","."))*12} EUR par an'
+                return f'{float(sal_low.replace(",", "."))*12} - {float(sal_high.replace(",", "."))*12} EUR par an'
 
             return salary
 

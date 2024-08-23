@@ -1,25 +1,16 @@
-import sys
 import os
-
-
-# Import internal modules
 from utils.postgres import get_conn, insert_job_offer
 from utils.s3 import connect_to_s3, download_csv_files, create_df, remove_tmp_folder
 from utils.models import JobItemProcessed
-from utils.logger import Logger
-
-# Importing required modules
 from datetime import datetime, timedelta
 from airflow.decorators import task
 from airflow.operators.python import PythonOperator
 from airflow import DAG
+from airflow.exceptions import AirflowFailException
 
-log_dir = os.path.join(os.getcwd(), "logs")
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
+# Import internal modules
 
-today = datetime.now().strftime("%Y-%m-%d")
-logger = Logger(f"etl_test_{today}.log").get_logger()
+# Importing required modules
 
 default_args = {
     'owner': 'airflow',
@@ -34,7 +25,7 @@ with DAG(
     'daily_etl_job_offers',
     default_args=default_args,
     description='A simple ETL pipeline for job offers',
-    schedule='0 8 * * *',  # This cron expression means every day at 8 AM
+    schedule='0 6 * * *',  # This cron expression means every day at midnight
     start_date=datetime(2023, 1, 1),
     catchup=False,
     tags=['etl', 'job_offers'],
@@ -42,30 +33,47 @@ with DAG(
 
     @task()
     def extract_from_s3():
-        s3 = connect_to_s3()
-        if s3:
-            download_csv_files(s3)
-            logger.info("task (1/3) completed - Extracted data from S3")
+        try:
+            s3 = connect_to_s3()
+            if s3:
+                download_csv_files(s3)
+                print("task (1/3) completed - Extracted data from S3")
+            else:
+                print("task (1/3) failed - Could not connect to S3")
+                raise AirflowFailException("Could not connect to S3")
+        except Exception as e:
+            print(f"task (1/3) failed - {e}")
+            raise AirflowFailException(e)
 
     @task()
     def transform_data():
-        df = create_df()
-        df["publication_date"].apply(
-            lambda x: datetime.strptime(x, '%d/%m/%Y').strftime('%Y-%m-%d'))
-
-        logger.info("task (2/3) completed - Transformed data")
-        return df
+        try:
+            df = create_df()
+            print("task (2/3) completed - Transformed data")
+            return df
+        except Exception as e:
+            print(f"task (2/3) failed - Exception: {str(e)}")
+            raise AirflowFailException(f"Error in transform_data: {str(e)}")
 
     @task()
     def load_data(df):
-        conn = get_conn()
-        if conn:
-            for _, row in df.iterrows():
-                job_offer: dict = row.to_dict()
-                job = JobItemProcessed(**job_offer)
-                insert_job_offer(conn, job)
-            conn.close()
-            logger.info("task (3/3) completed - Loaded data into the database")
+        try:
+            conn = get_conn()
+            if conn:
+                for _, row in df.iterrows():
+                    try:
+                        job_offer = row.to_dict()
+                        job = JobItemProcessed(**job_offer)
+                        insert_job_offer(conn, job)
+                    except Exception as e:
+                        raise AirflowFailException(
+                            f"Error inserting job offer: {job.__str__()} : {str(e)}")
+                conn.close()
+                print("task (3/3) completed - Loaded data into the database")
+            else:
+                raise AirflowFailException("Could not connect to the database")
+        except Exception as e:
+            raise AirflowFailException(f"Error in load_data: {str(e)}")
 
     # Defining the task dependencies
     extract_task = extract_from_s3()

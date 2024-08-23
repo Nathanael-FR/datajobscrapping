@@ -1,15 +1,7 @@
 import boto3
 import os
-import pandas as pd 
+import pandas as pd
 from datetime import datetime
-from utils.logger import Logger
-
-log_dir = os.path.join(os.getcwd(), "logs")
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
-
-today = datetime.now().strftime("%Y-%m-%d")
-logger = Logger(f"{log_dir}/etl_test_{today}.log").get_logger()
 
 
 def connect_to_s3() -> boto3.client:
@@ -21,10 +13,9 @@ def connect_to_s3() -> boto3.client:
             region_name="us-east-1"
         )
     except Exception as e:
-        logger.error(f'Error while connecting to S3: {e}')
-        return None
+        raise e
     else:
-        logger.info("Connected to S3")
+        print("Connected to S3")
         return session.client("s3")
 
 
@@ -36,18 +27,18 @@ def download_csv_files(s3) -> None:
 
     if not os.path.exists(local_folder):
         os.makedirs(local_folder)
-        logger.info(f"Created folder {local_folder}")
+        print(f"Created {local_folder}")
 
     response = s3.list_objects_v2(Bucket=bucket_name, Prefix=s3_folder)
-    logger.info(f"Downloading csv files from {bucket_name}/{s3_folder}")
+    print(f"Downloading csv files from {bucket_name}/{s3_folder}")
 
     for obj in response.get('Contents', []):
         if obj['Key'].endswith('.csv'):
-            logger.info(f"Downloading {obj['Key']} to {local_folder}")
+            print(f"Downloading {obj['Key']} to {local_folder}")
             local_path = os.path.join(
                 local_folder, os.path.basename(obj['Key']))
             s3.download_file(bucket_name, obj['Key'], local_path)
-            logger.info(f"Downloaded {obj['Key']} to {local_path}")
+            print(f"Downloaded {obj['Key']} to {local_path}")
 
 
 def create_df() -> pd.DataFrame:
@@ -56,15 +47,14 @@ def create_df() -> pd.DataFrame:
     # Get all the absolute paths of the csv files
     csv_files = [os.path.join(dir, f)
                  for f in os.listdir(dir) if f.endswith('.csv')]
-    logger.info(f"Creating dataframe from csv files: {csv_files}")
+    print(f"Creating dataframe from csv files: {csv_files}")
     return pd.concat(map(pd.read_csv, csv_files))
-
 
 
 def remove_tmp_folder() -> None:
     import shutil
     shutil.rmtree(os.path.join(os.getcwd(), "tmp"))
-    logger.info("Removed tmp folder")
+    print("Removed tmp folder")
 
 
 if __name__ == "__main__":

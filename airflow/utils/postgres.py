@@ -1,10 +1,6 @@
 import psycopg2
 from utils.models import JobItemProcessed
 from datetime import datetime
-from utils.logger import Logger
-
-today = datetime.now().strftime("%Y-%m-%d")
-logger = Logger(f"etl_test_{today}.log").get_logger()
 
 
 def get_conn():
@@ -16,19 +12,19 @@ def get_conn():
             host="postgres",
         )
     except Exception as e:
-        logger.error(f"Error while connecting to the database: {e}")
-        return None
+        return
     else:
-        logger.info("Successfuly onnected to the database")
         return conn
 
 
 def insert_job_offer(conn, job_offer: JobItemProcessed):
 
-    if job_offer.job_description.startswith('"'):
-        # if the description has been quoted when the data was converted to csv,
-        # remove the quotes
-        job_offer.job_description = job_offer.job_description[1:-1]
+    if job_offer.job_description:
+        if job_offer.job_description.startswith('"'):
+            job_offer.job_description = job_offer.job_description[1:-1]
+
+    job_offer.publication_date = datetime.strptime(
+        job_offer.publication_date, "%d/%m/%Y").strftime("%Y-%m-%d")
 
     cursor = conn.cursor()
     try:
@@ -38,9 +34,9 @@ def insert_job_offer(conn, job_offer: JobItemProcessed):
             job_title, job_url, job_desc, salary, company_name, company_sector,
             company_logo_url, loc, contract_type, remote_type, publication_date, skills
             ) VALUES (
-            '{job_offer.job_title}', '{job_offer.job_url}', '{job_offer.job_description}', 
+            '{job_offer.job_title}', '{job_offer.job_url}', '{job_offer.job_description}',
             '{job_offer.salary}', '{job_offer.company_name}', '{job_offer.company_sector}',
-            '{job_offer.company_logo_url}', '{job_offer.location}', '{job_offer.contract_type}', 
+            '{job_offer.company_logo_url}', '{job_offer.location}', '{job_offer.contract_type}',
             '{job_offer.remote_type}', '{job_offer.publication_date}', '{job_offer.skills}'
             )
             """
@@ -48,10 +44,10 @@ def insert_job_offer(conn, job_offer: JobItemProcessed):
 
         conn.commit()
     except Exception as e:
-        logger.error(f"Error while inserting data: {e}")
         conn.rollback()
+        raise e
     else:
-        logger.info(f"Data inserted successfully : {job_offer.__str__()}")
+        print("Data inserted successfully")
     finally:
         cursor.close()
 
