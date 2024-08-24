@@ -2,7 +2,7 @@ name: Deploy with Ansible
 
 on:
   workflow_run:
-    workflows: ["Test S3 Connection"]
+    workflows: ["Test S3 Connection", "push-pull-test-docker"]
     types:
       - completed
 

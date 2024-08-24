@@ -2,7 +2,7 @@ name: Build, Push, and Test containers
 
 on:
   workflow_run:
-    workflows: ["Build, Push, and Test containers"]
+    workflows: ["Test S3 Connection"]
     types:
       - completed
 
