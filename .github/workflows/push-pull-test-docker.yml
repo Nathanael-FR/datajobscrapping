@@ -42,7 +42,7 @@ jobs:
     - name: Build and push airflow image
       uses: docker/build-push-action@v3
       with:
-        context: ./db
+        context: ./airflow
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/airflow:${{ github.run_id }}
 
@@ -142,14 +142,14 @@ jobs:
     
     ###### Airflow stack containers ######
 
-    - name: Run airflow-postgres container
+    - name: Run airflow_postgres container
       run: |
         docker run -d \
           -e POSTGRES_USER=airflow \
           -e POSTGRES_PASSWORD=airflow \
           -e POSTGRES_DB=airflow \
           -v airflow_pgdata:/var/lib/postgresql/data \
-          --name airflow-postgres \
+          --name airflow_postgres \
           --network airflow_network \
           postgres:14.1-alpine 
 
@@ -157,7 +157,7 @@ jobs:
       run: |
         docker run -d \
           -e AIRFLOW__CORE__EXECUTOR=LocalExecutor \
-          -e AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow \
+          -e AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow_postgres/airflow \
           -e AIRFLOW__CORE__FERNET_KEY='L_x43MRdzsoGOzCGwqcLhcpOZ6fQMrvNw_AT89oKdl4=' \
           -e AIRFLOW__WEBSERVER__SECRET_KEY='YOUR_SECRET_KEY_HERE' \
           -e AIRFLOW__CORE__LOAD_EXAMPLES='false' \
@@ -169,7 +169,7 @@ jobs:
           --health-interval=30s \
           --health-timeout=30s \
           --health-retries=3 \
-          --depends-on airflow-postgres \
+          --depends-on airflow_postgres \
           ${{ secrets.DOCKERHUB_USERNAME }}/airflow:${{ github.run_id }} 
           airflow webserver
 
@@ -177,14 +177,14 @@ jobs:
       run: |
         docker run -d \
           -e AIRFLOW__CORE__EXECUTOR=LocalExecutor \
-          -e AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow \
+          -e AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow_postgres/airflow \
           -e AIRFLOW__CORE__FERNET_KEY='L_x43MRdzsoGOzCGwqcLhcpOZ6fQMrvNw_AT89oKdl4=' \
           -e AIRFLOW__CORE__LOAD_EXAMPLES='false' \
           -v ./airflow/dags:/opt/airflow/dags \
           -v ./airflow/utils:/opt/airflow/utils \
           --name airflow_scheduler \
           --network airflow_network \
-          --depends-on airflow-postgres \
+          --depends-on airflow_postgres \
           ${{ secrets.DOCKERHUB_USERNAME }}/airflow:${{ github.run_id }} 
           airflow scheduler
 

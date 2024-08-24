@@ -2,9 +2,9 @@ version: '3.7'
 
 services:
 
-  airflow-postgres:
+  airflow_postgres:
     image: postgres:14.1-alpine
-    container_name: airflow-postgres
+    container_name: airflow_postgres
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
@@ -25,7 +25,7 @@ services:
     container_name: airflow_webserver
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow_postgres/airflow
       AIRFLOW__CORE__FERNET_KEY: 'L_x43MRdzsoGOzCGwqcLhcpOZ6fQMrvNw_AT89oKdl4='
       AIRFLOW__WEBSERVER__SECRET_KEY: 'YOUR_SECRET_KEY_HERE'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
@@ -36,7 +36,7 @@ services:
     ports:
       - 8082:8080
     depends_on:
-      airflow-postgres:
+      airflow_postgres:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "[ -f /opt/airflow/airflow-webserver.pid ]"]
@@ -51,7 +51,7 @@ services:
     container_name: airflow_scheduler
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow_postgres/airflow
       AIRFLOW__CORE__FERNET_KEY: 'L_x43MRdzsoGOzCGwqcLhcpOZ6fQMrvNw_AT89oKdl4='
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     networks:
@@ -60,7 +60,7 @@ services:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/utils:/opt/airflow/utils
     depends_on:
-      airflow-postgres:
+      airflow_postgres:
         condition: service_healthy
     command: ["airflow", "scheduler"]
 

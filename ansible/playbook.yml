@@ -6,6 +6,7 @@
 
   tasks:
 
+    ###### Pull images from Dockerhub ######
     - name: Pull Postgres image 
       community.docker.docker_image:
         name: "{{ dockerhub_username }}/mypostgres:{{ push_id }}"
@@ -16,11 +17,33 @@
         name: "{{ dockerhub_username }}/webscraper:{{ push_id }}"
         source: pull
 
-    - name: Create a volume for Postgres data
+    - name: Pull Airflow image
+      community.docker.docker_image:
+        name: "{{ dockerhub_username }}/airflow:{{ push_id }}"
+        source: pull
+
+    ###### Create volumes and networks ######
+    - name: Create a volume for Postgres data if not exists
       community.docker.docker_volume:
         name: postgres_data
         state: present
 
+    - name: Create a volume for Airflow data if not exists
+      community.docker.docker_volume:
+        name: airflow_data
+        state: present
+
+    - name: Create webscraper network for the containers if not exists
+      community.docker.docker_network:
+        name: webscraper_network
+        state: present
+
+    - name: Create airflow network for the containers if not exists
+      community.docker.docker_network:
+        name: airflow_network
+        state: present
+
+    ###### Stop and remove existing containers ######
     - name: Stop and remove existing Postgres container
       community.docker.docker_container:
         name: mypostgres
@@ -31,16 +54,13 @@
         name: webscraper
         state: absent
 
-    - name: Create webscraper network for the containers
-      community.docker.docker_network:
-        name: webscraper_network
-        state: present
+    - name: Stop and remove existing Airflow containers
+      community.docker.docker_container:
+        name: airflow_webserver
+        state: absent
 
-    - name: Create airflow network for the containers
-      community.docker.docker_network:
-        name: airflow_network
-        state: present
 
+    ###### Run Postgres, Webscraper and Airflow containers ######
     - name: Run Postgres container on VPS
       community.docker.docker_container:
         name: mypostgres
@@ -72,19 +92,133 @@
           DB_NAME: "{{ postgres_db }}"
         networks:
           - name: webscraper_network
+        depends_on:
+          mypostgres:
+            condition: service_healthy
 
-    - name: Grab container status
+    - name: Run Airflow postgres container on VPS
+      community.docker.docker_container:
+        name: airflow_postgres
+        image: postgres:14.1-alpine
+        state: started
+        restart_policy: always
+        volumes:
+          - airflow_data:/var/lib/postgresql/data
+        env:
+          POSTGRES_USER: airflow
+          POSTGRES_PASSWORD: airflow
+          POSTGRES_DB: airflow
+        networks:
+          - name: airflow_network
+        healthcheck:
+          test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+          interval: 5s
+          timeout: 5s
+          retries: 5
+
+    - name: Run Airflow webserver container on VPS
+      community.docker.docker_container:
+        name: airflow_webserver
+        image: "{{ dockerhub_username }}/airflow:{{ push_id }}"
+        state: started
+        restart_policy: always
+        env:
+          AIRFLOW__CORE__EXECUTOR: LocalExecutor
+          AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow_postgres/airflow
+          AIRFLOW__CORE__FERNET_KEY: 'L_x43MRdzsoGOzCGwqcLhcpOZ6fQMrvNw_AT89oKdl4='
+          AIRFLOW__WEBSERVER__SECRET_KEY: 'YOUR_SECRET_KEY_HERE'
+          AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+          AWS_ACCESS_KEY_ID: "{{ aws_access_key_id }}"
+          AWS_SECRET_ACCESS_KEY: "{{ aws_secret_access_key }}"
+          S3_BUCKET_NAME: "{{ s3_bucket_name }}"
+        networks:
+          - name: airflow_network
+        ports:
+          - 8082:8080
+        depends_on:
+          airflow_postgres:
+            condition: service_healthy
+        healthcheck:
+          test: ["CMD-SHELL", "[ -f /opt/airflow/airflow-webserver.pid ]"]
+          interval: 30s
+          timeout: 30s
+          retries: 3
+        command: ["airflow", "webserver"]
+
+    - name: Run Airflow scheduler container on VPS
+      community.docker.docker_container:
+        name: airflow_scheduler
+        image: "{{ dockerhub_username }}/airflow:{{ push_id }}"
+        state: started
+        restart_policy: always
+        env:
+          AIRFLOW__CORE__EXECUTOR: LocalExecutor
+          AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow_postgres/airflow
+          AIRFLOW__CORE__FERNET_KEY: 'L_x43MRdzsoGOzCGwqcLhcpOZ6fQMrvNw_AT89oKdl4='
+          AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+        networks:
+          - name: airflow_network
+        volumes:
+          - ./airflow/dags:/opt/airflow/dags
+          - ./airflow/utils:/opt/airflow/utils
+        depends_on:
+          airflow_postgres:
+            condition: service_healthy
+        command: ["airflow", "scheduler"]
+
+    ###### Check if the containers are running ######
+    - name: Check if Postgres container is running
+      community.docker.docker_container_info:
+        name: mypostgres
+      register: postgres_container
+
+    - name: Check if Webscraper container is running
       community.docker.docker_container_info:
         name: webscraper
-      register: container_info
+      register: webscraper_container
 
-    - name: Ensure the container is running
+    - name: Check if Airflow webserver container is running
+      community.docker.docker_container_info:
+        name: airflow_webserver
+      register: airflow_webserver_container
+
+    - name: Check if Airflow scheduler container is running
+      community.docker.docker_container_info:
+        name: airflow_scheduler
+      register: airflow_scheduler_container
+
+    ###### Assert that the containers are running ######
+    - name: Ensure Postgres container is running
       assert:
         that:
-          - container_info.container.State.Running
-        msg: "The webscraper container is not running!"
+          - postgres_container.containers is not none
+          - postgres_container.containers[0].State.Running
+        fail_msg: "Postgres container is not running!"
 
-    - name: Check environment variables inside the container
+    - name: Ensure Webscraper container is running
+      assert:
+        that:
+          - webscraper_container.containers is not none
+          - webscraper_container.containers[0].State.Running
+        fail_msg: "Webscraper container is not running!"
+
+    - name: Ensure Airflow webserver container is running
+      assert:
+        that:
+          - airflow_webserver_container.containers is not none
+          - airflow_webserver_container.containers[0].State.Running
+        fail_msg: "Airflow webserver container is not running!"
+
+    - name: Ensure Airflow scheduler container is running
+      assert:
+        that:
+          - airflow_scheduler_container.containers is not none
+          - airflow_scheduler_container.containers[0].State.Running
+        fail_msg: "Airflow scheduler container is not running!"
+
+
+    ###### Check environment variables inside the containers ######
+    - name: Check environment variables inside the webscraper container
       shell: |
         docker exec webscraper python3 -c "import os; assert os.environ['AWS_ACCESS_KEY_ID'] == '{{ aws_access_key_id }}'"
         docker exec webscraper python3 -c "import os; assert os.environ['AWS_SECRET_ACCESS_KEY'] == '{{ aws_secret_access_key }}'"
@@ -92,12 +226,13 @@
 
       ignore_errors: yes
 
-    ###### Run airflow stack ######
+    - name: Check environment variables inside the airflow webserver container
+      shell: |
+        docker exec airflow_webserver python3 -c "import os; assert os.environ['AWS_ACCESS_KEY_ID'] == '{{ aws_access_key_id }}'"
+        docker exec airflow_webserver python3 -c "import os; assert os.environ['AWS_SECRET_ACCESS_KEY'] == '{{ aws_secret_access_key }}'"
+        docker exec airflow_webserver python3 -c "import os; assert os.environ['S3_BUCKET_NAME'] == '{{ s3_bucket_name }}'"
 
-    - name: Pull Airflow image
-      community.docker.docker_image:
-        name: "{{ dockerhub_username }}/airflow:{{ push_id }}"
-        source: pull
+      ignore_errors: yes
 
     ###### Clean up unused images ######
 
