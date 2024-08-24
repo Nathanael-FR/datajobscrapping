@@ -8,6 +8,7 @@ USER root
 RUN chmod +x /opt/airflow/entrypoint.sh
 
 USER airflow
+
 COPY dags /opt/airflow/dags
 COPY utils /opt/airflow/utils
 COPY setup.py /opt/airflow/setup.py
