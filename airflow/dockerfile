@@ -6,6 +6,5 @@ COPY entrypoint.sh /opt/airflow/entrypoint.sh
 COPY dags /opt/airflow/dags
 COPY utils /opt/airflow/utils
 COPY setup.py /opt/airflow/setup.py
-COPY .env /opt/airflow/.env
 
 ENTRYPOINT ["/opt/airflow/entrypoint.sh"]
