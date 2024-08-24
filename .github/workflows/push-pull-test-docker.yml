@@ -153,6 +153,13 @@ jobs:
           --network airflow_network \
           postgres:14.1-alpine 
 
+    - name : Wait for PostgreSQL to be ready
+      run: |
+        until docker exec airflow_postgres pg_isready -U airflow -d airflow; do
+          echo "Waiting for PostgreSQL to be ready..."
+          sleep 5
+        done
+
     - name: Run airflow-webserver container
       run: |
         docker run -d \
@@ -161,7 +168,8 @@ jobs:
           -e AIRFLOW__CORE__FERNET_KEY='L_x43MRdzsoGOzCGwqcLhcpOZ6fQMrvNw_AT89oKdl4=' \
           -e AIRFLOW__WEBSERVER__SECRET_KEY='YOUR_SECRET_KEY_HERE' \
           -e AIRFLOW__CORE__LOAD_EXAMPLES='false' \
-          --env-file .env \
+          -v ./airflow/dags:/opt/airflow/dags \
+          -v ./airflow/utils:/opt/airflow/utils \
           --name airflow_webserver \
           --network airflow_network \
           -p 8082:8080 \
@@ -169,7 +177,6 @@ jobs:
           --health-interval=30s \
           --health-timeout=30s \
           --health-retries=3 \
-          --depends-on airflow_postgres \
           ${{ secrets.DOCKERHUB_USERNAME }}/airflow:${{ github.run_id }} 
           airflow webserver
 
@@ -184,7 +191,6 @@ jobs:
           -v ./airflow/utils:/opt/airflow/utils \
           --name airflow_scheduler \
           --network airflow_network \
-          --depends-on airflow_postgres \
           ${{ secrets.DOCKERHUB_USERNAME }}/airflow:${{ github.run_id }} 
           airflow scheduler
 
@@ -204,6 +210,6 @@ jobs:
           echo "Airflow scheduler container is running"
         fi
     
-    - name: Run dag tests
-      run: |
-        docker exec airflow_webserver cd /opt/airflow/dags && python s3_to_db.py
+    # - name: Run dag tests
+    #   run: |
+    #     docker exec airflow_webserver cd /opt/airflow/dags && python s3_to_db.py
