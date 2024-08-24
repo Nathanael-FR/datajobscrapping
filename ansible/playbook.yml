@@ -76,6 +76,15 @@
         networks:
           - name: webscraper_network
 
+    
+    - name: Wait for Postgres container to be healthy
+      community.docker.docker_container_info:
+        name: mypostgres
+      register: postgres_container_info
+      until: postgres_container_info.container.State.Health.Status == "healthy"
+      retries: 10
+      delay: 5
+
     - name: Run Webscraper containers on VPS
       community.docker.docker_container:
         name: webscraper
@@ -92,9 +101,6 @@
           DB_NAME: "{{ postgres_db }}"
         networks:
           - name: webscraper_network
-        depends_on:
-          mypostgres:
-            condition: service_healthy
 
     - name: Run Airflow postgres container on VPS
       community.docker.docker_container:
@@ -116,6 +122,15 @@
           timeout: 5s
           retries: 5
 
+    - name: Wait for Airflow's Postgres container to be healthy
+      community.docker.docker_container_info:
+        name: airflow_postgres
+      register: airflow_postgres_container_info
+      until: airflow_postgres_container_info.container.State.Health.Status == "healthy"
+      retries: 10
+      delay: 5
+
+
     - name: Run Airflow webserver container on VPS
       community.docker.docker_container:
         name: airflow_webserver
@@ -135,9 +150,6 @@
           - name: airflow_network
         ports:
           - 8082:8080
-        depends_on:
-          airflow_postgres:
-            condition: service_healthy
         healthcheck:
           test: ["CMD-SHELL", "[ -f /opt/airflow/airflow-webserver.pid ]"]
           interval: 30s
@@ -161,9 +173,6 @@
         volumes:
           - ./airflow/dags:/opt/airflow/dags
           - ./airflow/utils:/opt/airflow/utils
-        depends_on:
-          airflow_postgres:
-            condition: service_healthy
         command: ["airflow", "scheduler"]
 
     ###### Check if the containers are running ######
