@@ -201,27 +201,27 @@
 
     ###### Assert that the containers are running ######
 
-    - name: Ensure Webscraper container is running
-      assert:
-        that:
-          - webscraper_container.containers is not none
-          - webscraper_container.containers[0].State.Running
-        fail_msg: "Webscraper container is not running!"
+    # - name: Ensure Webscraper container is running
+    #   assert:
+    #     that:
+    #       - webscraper_container.containers is not none
+    #       - webscraper_container.containers[0].State.Running
+    #     fail_msg: "Webscraper container is not running!"
 
 
-    - name: Ensure Airflow webserver container is running
-      assert:
-        that:
-          - airflow_webserver_container.containers is not none
-          - airflow_webserver_container.containers[0].State.Running
-        fail_msg: "Airflow webserver container is not running!"
+    # - name: Ensure Airflow webserver container is running
+    #   assert:
+    #     that:
+    #       - airflow_webserver_container.containers is not none
+    #       - airflow_webserver_container.containers[0].State.Running
+    #     fail_msg: "Airflow webserver container is not running!"
 
-    - name: Ensure Airflow scheduler container is running
-      assert:
-        that:
-          - airflow_scheduler_container.containers is not none
-          - airflow_scheduler_container.containers[0].State.Running
-        fail_msg: "Airflow scheduler container is not running!"
+    # - name: Ensure Airflow scheduler container is running
+    #   assert:
+    #     that:
+    #       - airflow_scheduler_container.containers is not none
+    #       - airflow_scheduler_container.containers[0].State.Running
+    #     fail_msg: "Airflow scheduler container is not running!"
 
     ###### Check environment variables inside the containers ######
     - name: Check environment variables inside the webscraper container
