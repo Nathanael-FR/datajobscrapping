@@ -180,11 +180,6 @@
         command: ["airflow", "scheduler"]
 
     ###### Check if the containers are running ######
-    - name: Check if Postgres container is running
-      community.docker.docker_container_info:
-        name: mypostgres
-      register: postgres_container
-
     - name: Check if Webscraper container is running
       community.docker.docker_container_info:
         name: webscraper
