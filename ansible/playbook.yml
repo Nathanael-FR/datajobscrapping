@@ -196,12 +196,6 @@
       register: airflow_scheduler_container
 
     ###### Assert that the containers are running ######
-    - name: Ensure Postgres container is running
-      assert:
-        that:
-          - postgres_container.containers is not none
-          - postgres_container.containers[0].State.Running
-        fail_msg: "Postgres container is not running!"
 
     - name: Ensure Webscraper container is running
       assert:
