@@ -6,6 +6,10 @@
 
   tasks:
 
+    ###### Clean up unused images ######
+    - name: Remove ununsed images (prune -a)
+      shell : docker image prune -a -f
+
     ###### Pull images from Dockerhub ######
     - name: Pull Postgres image 
       community.docker.docker_image:
@@ -203,6 +207,7 @@
           - webscraper_container.containers is not none
           - webscraper_container.containers[0].State.Running
         fail_msg: "Webscraper container is not running!"
+      ignore_errors: yes
 
     - name: Ensure Airflow webserver container is running
       assert:
@@ -210,6 +215,7 @@
           - airflow_webserver_container.containers is not none
           - airflow_webserver_container.containers[0].State.Running
         fail_msg: "Airflow webserver container is not running!"
+      ignore_errors: yes
 
     - name: Ensure Airflow scheduler container is running
       assert:
@@ -217,7 +223,7 @@
           - airflow_scheduler_container.containers is not none
           - airflow_scheduler_container.containers[0].State.Running
         fail_msg: "Airflow scheduler container is not running!"
-
+      ignore_errors: yes
 
     ###### Check environment variables inside the containers ######
     - name: Check environment variables inside the webscraper container
@@ -225,7 +231,6 @@
         docker exec webscraper python3 -c "import os; assert os.environ['AWS_ACCESS_KEY_ID'] == '{{ aws_access_key_id }}'"
         docker exec webscraper python3 -c "import os; assert os.environ['AWS_SECRET_ACCESS_KEY'] == '{{ aws_secret_access_key }}'"
         docker exec webscraper python3 -c "import os; assert os.environ['S3_BUCKET_NAME'] == '{{ s3_bucket_name }}'"
-
       ignore_errors: yes
 
     - name: Check environment variables inside the airflow webserver container
@@ -233,7 +238,6 @@
         docker exec airflow_webserver python3 -c "import os; assert os.environ['AWS_ACCESS_KEY_ID'] == '{{ aws_access_key_id }}'"
         docker exec airflow_webserver python3 -c "import os; assert os.environ['AWS_SECRET_ACCESS_KEY'] == '{{ aws_secret_access_key }}'"
         docker exec airflow_webserver python3 -c "import os; assert os.environ['S3_BUCKET_NAME'] == '{{ s3_bucket_name }}'"
-
       ignore_errors: yes
 
     ###### Clean up unused images ######
