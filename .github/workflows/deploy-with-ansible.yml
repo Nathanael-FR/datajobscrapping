@@ -36,6 +36,13 @@ jobs:
         context: ./db
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/mypostgres:${{ github.run_id }}
+    
+    - name: Build and push airflow image
+      uses: docker/build-push-action@v3
+      with:
+        context: ./airflow
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/airflow:${{ github.run_id }}
 
   test-ssh:
     runs-on: ubuntu-latest
